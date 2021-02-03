@@ -1,5 +1,5 @@
 # PROG21-FX
-![Last commit](https://img.shields.io/github/last-commit/pomaretta/PROG2021-FX) ![Follows](https://img.shields.io/github/followers/pomaretta?style=social)
+![Last commit](https://img.shields.io/github/last-commit/pomaretta/PROG21-FX) ![Follows](https://img.shields.io/github/followers/pomaretta?style=social)
 
 This repository is for create school projects and
 sharing my progress in JavaFX
