@@ -50,6 +50,7 @@ public class ScreenController implements Initializable {
         this.root.getChildren().add(mediaView);
         this.gameButton.toFront();
         this.exitButton.toFront();
+        Main.playVideo();
     }
 
     @FXML

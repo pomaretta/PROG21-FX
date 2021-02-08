@@ -24,6 +24,7 @@ import javafx.scene.shape.Circle;
 
 public class Ball {
 
+    private final double MAX_VEL = 5;
     private double deltaX, deltaY, velocity;
     private Circle sprite;
 
@@ -43,7 +44,8 @@ public class Ball {
     }
 
     public void accelerate(){
-        this.velocity++;
+        if(this.velocity <= this.MAX_VEL)
+            this.velocity++;
     }
 
     public void movement(Parent canvas){

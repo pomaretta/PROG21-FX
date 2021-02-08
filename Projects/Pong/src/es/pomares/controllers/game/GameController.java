@@ -21,12 +21,16 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -38,12 +42,16 @@ import java.util.Set;
 
 public class GameController {
 
+    final private int MAX_POINTS = 5;
     final private int BALL_RADIUS = 15;
     final private int HEIGHT, WIDTH;
     final private double[] P1_POS;
     final private double[] P2_POS;
 
+    // FX Objects
     private Pane canvas;
+
+    private Label points;
 
     private Player[] players;
     private Ball ball;
@@ -55,6 +63,10 @@ public class GameController {
         this.WIDTH = WIDTH;
 
         this.canvas = new Pane();
+        this.canvas.setStyle("-fx-background-color: black");
+
+        this.points = new Label("0 - 0");
+        this.points.setStyle("-fx-font-size: 22px;-fx-background-color: white");
 
         this.players = new Player[]{
                 new Player(20,80, Color.GREEN),
@@ -89,15 +101,26 @@ public class GameController {
         this.canvas.getChildren().add(this.players[0].getSprite());
         this.canvas.getChildren().add(this.players[1].getSprite());
         this.canvas.getChildren().add(this.ball.getSprite());
+        this.canvas.getChildren().add(this.points);
     }
 
     private void relocateComponents(){
         this.players[0].getSprite().relocate(this.P1_POS[0],this.P1_POS[1]);
         this.players[1].getSprite().relocate(this.P2_POS[0],this.P2_POS[1]);
         this.ball.relocateInMiddle(this.canvas);
+        this.points.relocate(((double) this.WIDTH / 2),50);
     }
 
     private void startRound(){
+
+        if(this.players[0].getPoints() == MAX_POINTS)
+            goBack();
+
+        if(this.players[1].getPoints() == MAX_POINTS)
+            goBack();
+
+        this.points.setText(String.format("%d - %d",this.players[0].getPoints(),this.players[1].getPoints()));
+
         // https://stackoverflow.com/questions/52580865/javafx-multiple-keylisteners-at-once
         final List<KeyCode> acceptedCodes = Arrays.asList(KeyCode.S, KeyCode.W, KeyCode.UP, KeyCode.DOWN);
         final Set<KeyCode> codes = new HashSet<>();
@@ -141,6 +164,15 @@ public class GameController {
         this.ball.generateAngle();
         relocateComponents();
         startRound();
+    }
+
+    private void goBack() {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/resources/fxml/Screen.fxml"));
+            Main.scene.setRoot(root);
+        } catch (Exception exception){
+            System.out.println(exception.getMessage());
+        }
     }
 
     // SCENE
