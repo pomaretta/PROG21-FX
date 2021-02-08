@@ -29,17 +29,14 @@ public class Ball {
     public double velocity;
     public Circle ball;
 
-    private boolean leftPoint = false;
-    private boolean rightPoint = false;
+    private boolean leftLimit = false;
+    private boolean rightLimit = false;
 
     public Ball(int radius, Color color){
 
         ball = new Circle(radius,color);
 
-        double angle = Math.toRadians(Math.random() * 120 + 90);
-        velocity = 2;
-        deltaX = velocity * Math.cos(angle);
-        deltaY = velocity * Math.sin(angle);
+        resetVelocity();
 
     }
 
@@ -48,54 +45,66 @@ public class Ball {
         ball.relocate((double)((limits.getMaxX() - (limits.getMaxX() / 2)) - ball.getRadius()),(double)((limits.getMaxY() - (limits.getMaxY() / 2)) - ball.getRadius()));
     }
 
-    public void modifyX(Ball ball){
-        ball.deltaX *= -1;
+    public void modifyX(){
+        this.deltaX *= -1;
     }
 
-    public void modifyY(Ball ball){
-        ball.deltaY *= -1;
+    public void modifyY(){
+        this.deltaY *= -1;
     }
 
     public void accelerate(){
         System.out.println("ACCELERATE");
-        velocity += 0.25;
+        velocity++;
     }
 
     public void movement(Pane canvas){
 
-        ball.setLayoutX(ball.getLayoutX() + deltaX);
-        ball.setLayoutY(ball.getLayoutY() + deltaY);
+        this.ball.setLayoutX(this.ball.getLayoutX() + deltaX);
+        this.ball.setLayoutY(this.ball.getLayoutY() + deltaY);
 
         final Bounds limits = canvas.getBoundsInLocal();
-        final boolean leftLimit = ball.getLayoutX() <= (limits.getMinX() + ball.getRadius());
-        final boolean rightLimit = ball.getLayoutX() >= (limits.getMaxX() - ball.getRadius());
-        final boolean topLimit = ball.getLayoutY() <= (limits.getMinY() + ball.getRadius());
-        final boolean lowerLimit = ball.getLayoutY() >= (limits.getMaxY() - ball.getRadius());
+        final boolean leftLimit = this.ball.getLayoutX() <= (limits.getMinX() + this.ball.getRadius());
+        final boolean rightLimit = this.ball.getLayoutX() >= (limits.getMaxX() - this.ball.getRadius());
+        final boolean topLimit = this.ball.getLayoutY() <= (limits.getMinY() + this.ball.getRadius());
+        final boolean lowerLimit = this.ball.getLayoutY() >= (limits.getMaxY() - this.ball.getRadius());
 
-        if(leftLimit || rightLimit){
+        if(leftLimit){
             System.out.println("LEFT POINT");
             //modifyX(this);
-            leftPoint = true;
+            this.leftLimit = true;
         }
 
         if(rightLimit){
             System.out.println("RIGHT POINT");
             //modifyX(this);
-            rightPoint = true;
+            this.rightLimit = true;
         }
 
         if(topLimit || lowerLimit){
-            modifyY(this);
+            modifyY();
         }
 
     }
 
-    public boolean isLeftPoint(){
-        return leftPoint;
+    public boolean isLeftLimit(){
+        return leftLimit;
     }
 
-    public boolean isRightPoint(){
-        return rightPoint;
+    public boolean isRightLimit(){
+        return rightLimit;
+    }
+
+    public void resetProperties(){
+        this.leftLimit = false;
+        this.rightLimit = false;
+    }
+
+    public void resetVelocity(){
+        double angle = Math.toRadians(Math.random() * 120 + 90);
+        velocity = 1;
+        deltaX = velocity * Math.cos(angle);
+        deltaY = velocity * Math.sin(angle);
     }
 
 }

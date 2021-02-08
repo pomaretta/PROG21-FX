@@ -46,10 +46,6 @@ public class Pong extends Application {
     private Ball ball;
     Timeline loop;
 
-    // PLAYER SCORE
-    private Text player0;
-    private Text player1;
-
     @Override
     public void start(Stage applicationStage){
 
@@ -65,12 +61,37 @@ public class Pong extends Application {
             new Player(20,50,Color.RED),
             new Player(20,50,Color.RED)
         };
+        this.ball = new Ball(BALL_RADIUS, Color.YELLOW);
 
-        this.player0 = new Text("Player0: " + this.players[0].getPoints());
-        this.player1 = new Text("Player1: " + this.players[0].getPoints());
+        // TIMELINE
+        loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
 
+            @Override
+            public void handle(final ActionEvent event){
+                gameController();
+            }
+
+        }));
+        loop.setCycleCount(Timeline.INDEFINITE);
+
+        generateComponents();
         initGame();
 
+    }
+
+    private void generateComponents(){
+        this.canvas.getChildren().add(this.players[0].player);
+        this.canvas.getChildren().add(this.players[1].player);
+        this.canvas.getChildren().add(ball.ball);
+    }
+
+    private void initGame(){
+
+        this.players[0].player.relocate(50,(double)((this.HEIGHT / 2) - players[0].player.getHeight()));
+        this.players[1].player.relocate(this.WIDTH - 100,(double)((this.HEIGHT / 2) - players[1].player.getHeight()));
+        this.ball.relocateInMiddle(this.canvas);
+
+        startGame();
     }
 
     private void startGame(){
@@ -95,52 +116,17 @@ public class Pong extends Application {
 
         });
 
-        // TIMELINE
-        loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(final ActionEvent event){
-                gameController();
-            }
-
-        }));
-        loop.setCycleCount(Timeline.INDEFINITE);
         loop.play();
 
     }
 
-    private void initGame(){
-
-        // OBJECT INIT
-        this.ball = new Ball(BALL_RADIUS, Color.YELLOW);
-
-        this.player0.setText("Player0: " + this.players[0].getPoints());
-        this.player1.setText("Player1: " + this.players[1].getPoints());
-
-        this.canvas.getChildren().add(this.players[0].player);
-        this.canvas.getChildren().add(this.players[1].player);
-        this.canvas.getChildren().add(this.player0);
-        this.canvas.getChildren().add(this.player1);
-        this.canvas.getChildren().add(ball.ball);
-
-        System.out.println(this.ball.deltaX);
-
-        this.players[0].player.relocate(50,(double)((this.HEIGHT / 2) - players[0].player.getHeight()));
-        this.players[1].player.relocate(this.WIDTH - 100,(double)((this.HEIGHT / 2) - players[1].player.getHeight()));
-        this.player0.relocate(50,50);
-        this.player1.relocate(this.WIDTH - 50,50);
-        this.ball.relocateInMiddle(this.canvas);
-
-        startGame();
-    }
-
     private void gameController(){
-        if(this.ball.isLeftPoint()){
+        if(this.ball.isLeftLimit()){
             this.players[1].addPoint();
             restartGame();
         }
 
-        if(this.ball.isRightPoint()){
+        if(this.ball.isRightLimit()){
             this.players[0].addPoint();
             restartGame();
         }
@@ -152,16 +138,14 @@ public class Pong extends Application {
 
     private void restartGame(){
 
-        this.canvas.getChildren().remove(this.players[0].player);
-        this.canvas.getChildren().remove(this.players[1].player);
-        this.canvas.getChildren().remove(this.player0);
-        this.canvas.getChildren().remove(this.player1);
-        this.canvas.getChildren().remove(this.ball.ball);
+        this.ball.resetProperties();
+        this.ball.resetVelocity();
 
-        this.ball = null;
-        this.loop = null;
+        this.loop.stop();
 
-        this.initGame();
+        System.out.println("DELTA X: " + this.ball.deltaX + "DELTA Y:" + this.ball.deltaY);
+
+        initGame();
 
     }
 

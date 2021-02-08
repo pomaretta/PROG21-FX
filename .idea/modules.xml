@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/PROG21-FX.iml" filepath="$PROJECT_DIR$/PROG21-FX.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Projects/Pong/Pong.iml" filepath="$PROJECT_DIR$/Projects/Pong/Pong.iml" />
     </modules>
   </component>
 </project>

@@ -52,9 +52,10 @@ public class Player {
 
     public static boolean detectCollision(Player player, Ball ball){
         if(ball.ball.getBoundsInParent().intersects(player.player.getBoundsInParent())){
-            //System.out.println("Impact");
-            ball.modifyX(ball);
-            //ball.accelerate();
+            System.out.println("Impact");
+            ball.modifyY();
+            ball.modifyX();
+            ball.accelerate();
         }
         return false;
     }
