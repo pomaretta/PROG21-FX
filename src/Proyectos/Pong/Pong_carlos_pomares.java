@@ -26,16 +26,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.sql.Time;
 import java.util.*;
 
 /**
@@ -60,13 +60,15 @@ public class Pong_carlos_pomares extends Application {
 
     // SCENES
     public EntryScene entryScene;
+    public OptionsScene optionsScene;
     public GameScene gameScene;
     public OverScene overScene;
+    public TestScene testScene;
 
     // ENTRY PROPERTIES
 
     // GAME PROPERTIES
-    private final int WINNER_ROUNDS = 15;
+    private final int WINNER_ROUNDS = 2;
 
     // OVER PROPERTIES
 
@@ -85,19 +87,24 @@ public class Pong_carlos_pomares extends Application {
 
         // INSTANCE AVAILABLE SCENES
         this.entryScene = new EntryScene(this.WIDTH,this.HEIGHT,this);
+        this.optionsScene = new OptionsScene(this.WIDTH,this.HEIGHT,this);
         this.gameScene = new GameScene(this.WIDTH,this.HEIGHT,this);
         this.overScene = new OverScene(this.WIDTH,this.HEIGHT,this);
+        this.testScene = new TestScene(this.WIDTH,this.HEIGHT,this);
 
         // SCENE PROPERTIES IF EXISTS
         this.gameScene.setMaxPoints(this.WINNER_ROUNDS);
 
         // REGISTER AVAILABLE SCENES
         this.manager.registerScene(entryScene);
+        this.manager.registerScene(optionsScene);
         this.manager.registerScene(gameScene);
         this.manager.registerScene(overScene);
+        this.manager.registerScene(testScene);
 
         // LOAD FIRST SCENE
         this.manager.changeScene(entryScene);
+        //this.manager.changeScene(optionsScene);
 
         // STAGE
         this.stage.setScene(this.manager.getScene());
@@ -208,8 +215,9 @@ class SceneManager {
 
 interface Component {
     public void generateComponents();
-    public void relocateComponents();
     public void loadComponents();
+    public void unloadComponents();
+    public void relocateComponents();
     public void run();
     public void bindManager(SceneManager manager) throws Exception;
     public Parent getScene();
@@ -239,7 +247,13 @@ abstract class PongScene implements Component {
     }
 
     @Override
+    public void unloadComponents() {
+        getRoot().getChildren().clear();
+    }
+
+    @Override
     public void run() {
+        unloadComponents();
         generateComponents();
         loadComponents();
         relocateComponents();
@@ -429,6 +443,7 @@ class EntryScene extends PongScene {
         super.run();
 
         this.sceneChange.setOnAction(e -> startGameHandler());
+        this.optionsChange.setOnAction(e -> goToOptions());
         this.exitOption.setOnAction(e -> exitApplication());
 
     }
@@ -437,8 +452,131 @@ class EntryScene extends PongScene {
         this.manager.changeScene(this.parent.gameScene);
     }
 
+    private void goToOptions() {
+
+        Timeline timeline = new Timeline();
+        KeyValue kv = new KeyValue(this.getRoot().translateXProperty(),-this.getWidth(),Interpolator.EASE_IN);
+        KeyFrame kf = new KeyFrame(Duration.millis(1000),kv);
+        timeline.getKeyFrames().add(kf);
+        timeline.play();
+
+        timeline.setOnFinished(e -> {
+            this.getRoot().translateXProperty().set(0);
+            this.manager.changeScene(this.parent.optionsScene);
+        });
+
+    }
+
     private void exitApplication(){
         this.parent.getStage().close();
+    }
+
+}
+
+class OptionsScene extends PongScene {
+
+    // COMPONENTS
+    private Label sceneTitle;
+    private Region backArrow;
+
+    private StackPane optionsPane;
+
+    public OptionsScene(int width, int height, Pong_carlos_pomares parent) {
+        super(width, height, parent);
+    }
+
+    @Override
+    public void generateComponents() {
+
+        this.getRoot().setStyle("-fx-background-color: white");
+
+        this.sceneTitle = new Label("Options Menu");
+        this.sceneTitle.setFont(Font.font("Arial",FontWeight.BOLD,42));
+
+        this.backArrow = generateArrow(50,40,"black");
+
+    }
+
+    @Override
+    public void loadComponents() {
+        this.getRoot().getChildren().addAll(
+                this.sceneTitle
+                ,this.backArrow
+        );
+    }
+
+    @Override
+    public void relocateComponents() {
+
+        this.sceneTitle.relocate(
+                ((double) this.getWidth() / 2 - 130),
+                50
+        );
+
+        this.backArrow.relocate(
+                50,
+                55
+        );
+
+    }
+
+    @Override
+    public void run() {
+        super.run();
+
+        ScaleTransition arrowScale = this.animateScale(backArrow);
+
+        this.backArrow.setOnMouseEntered(e -> {
+            arrowScale.play();
+        });
+
+        this.backArrow.setOnMouseExited(e -> {
+            arrowScale.jumpTo(Duration.ZERO);
+            arrowScale.stop();
+        });
+
+        this.backArrow.setOnMouseClicked(e -> {
+            goToTitleScreen();
+        });
+
+    }
+
+    private Region generateArrow(int minWidth, int minHeight, String fxColor){
+        Region arrow = new Region();
+        SVGPath svg = new SVGPath();
+        svg.setContent(
+                "M420.361,192.229c-1.83-0.297-3.682-0.434-5.535-0.41H99.305l6.88-3.2c6.725-3.183,12.843-7.515,18.08-12.8l88.48-88.48,c11.653-11.124,13.611-29.019,4.64-42.4c-10.441-14.259-30.464-17.355-44.724-6.914c-1.152,0.844-2.247,1.764-3.276,2.754,l-160,160C-3.119,213.269-3.13,233.53,9.36,246.034c0.008,0.008,0.017,0.017,0.025,0.025l160,160,c12.514,12.479,32.775,12.451,45.255-0.063c0.982-0.985,1.899-2.033,2.745-3.137c8.971-13.381,7.013-31.276-4.64-42.4,l-88.32-88.64c-4.695-4.7-10.093-8.641-16-11.68l-9.6-4.32h314.24c16.347,0.607,30.689-10.812,33.76-26.88,C449.654,211.494,437.806,195.059,420.361,192.229z"
+        );
+        arrow.setShape(svg);
+        arrow.setMinSize(minWidth,minHeight);
+        arrow.setStyle(String.format("-fx-background-color: %s",fxColor));
+        return arrow;
+    }
+
+    private void goToTitleScreen(){
+
+        Timeline timeline = new Timeline();
+        KeyValue kv = new KeyValue(this.getRoot().translateXProperty(),this.getWidth(),Interpolator.EASE_IN);
+        KeyFrame kf = new KeyFrame(Duration.millis(1000),kv);
+        timeline.getKeyFrames().add(kf);
+        timeline.play();
+
+        timeline.setOnFinished(e -> {
+            this.getRoot().translateXProperty().set(0);
+            this.manager.changeScene(this.parent.entryScene);
+        });
+
+    }
+
+    private ScaleTransition animateScale(Node node){
+
+        ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(1000),node);
+        scaleTransition.setCycleCount(Animation.INDEFINITE);
+        scaleTransition.setAutoReverse(true);
+        scaleTransition.setByX(0.2);
+        scaleTransition.setByY(0.2);
+
+        return scaleTransition;
     }
 
 }
@@ -485,6 +623,7 @@ class GameScene extends PongScene {
             if(getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
                 this.collisionCounter++;
 
+                ball.increaseCollision();
                 ball.modifyX();
 
                 if(collisionCounter > 1 && getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
@@ -495,14 +634,10 @@ class GameScene extends PongScene {
                     );
                 }
 
-                if(collisionCounter <= 0) {
-                    ball.increaseCollision();
-                }
-
-
                 if(ball.getConsecutiveCollision() >= 5){
                     ball.accelerate();
                 }
+
             } else if(!getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
                 resetCounter();
             }
@@ -655,6 +790,7 @@ class GameScene extends PongScene {
     private Label rightPoint;
     private Line midLine;
     private Label spaceRequirement;
+    private Label gameOver;
 
     public GameScene(int width, int height, Pong_carlos_pomares parent){
         super(width, height, parent);
@@ -706,6 +842,11 @@ class GameScene extends PongScene {
         this.spaceRequirement.setTextFill(Color.WHITE);
         this.spaceRequirement.setOpacity(.8);
 
+        this.gameOver = new Label("Game over");
+        this.gameOver.setFont(Font.font("Arial",FontWeight.BOLD,52));
+        this.gameOver.setTextFill(Color.WHITE);
+        this.gameOver.setOpacity(0.0);
+
         this.getRoot().setStyle("-fx-background-color: black");
     }
 
@@ -723,7 +864,10 @@ class GameScene extends PongScene {
                 ,this.rightPoint
                 ,this.midLine);
 
-        this.getRoot().getChildren().add(this.spaceRequirement);
+        this.getRoot().getChildren().addAll(
+                this.spaceRequirement,
+                this.gameOver
+        );
 
     }
 
@@ -754,6 +898,12 @@ class GameScene extends PongScene {
                 400
         );
         this.spaceRequirement.toFront();
+
+        this.gameOver.relocate(
+                ((double) this.getWidth() / 2) - 130
+                ,280
+        );
+        this.gameOver.toFront();
 
     }
 
@@ -839,8 +989,27 @@ class GameScene extends PongScene {
     }
 
     private void gameOver() {
-        this.parent.overScene.setPlayers(this.players);
-        this.manager.changeScene(this.parent.overScene);
+
+        this.loop.stop();
+
+        TranslateTransition translateTransition = new TranslateTransition(Duration.millis(800),this.gameOver);
+        FadeTransition fadeTransition = new FadeTransition(Duration.millis(1000),this.gameOver);
+
+        fadeTransition.setFromValue(0.0);
+        fadeTransition.setToValue(1.0);
+
+        translateTransition.setByY(-30);
+        translateTransition.setCycleCount(3);
+        translateTransition.setAutoReverse(true);
+
+        translateTransition.play();
+        fadeTransition.play();
+
+        translateTransition.setOnFinished(e -> {
+            this.parent.overScene.setPlayers(this.players);
+            this.manager.changeScene(this.parent.overScene);
+        });
+
     }
 
 }
@@ -886,4 +1055,107 @@ class OverScene extends PongScene {
         }
     }
 
+}
+
+class TestScene extends PongScene {
+
+    private Label gameOver;
+
+    public TestScene(int width, int height, Pong_carlos_pomares parent) {
+        super(width, height, parent);
+    }
+
+    @Override
+    public void generateComponents() {
+
+    }
+
+    @Override
+    public void loadComponents() {
+    }
+
+    @Override
+    public void relocateComponents() {
+    }
+
+    @Override
+    public void run() {
+        super.run();
+
+        SVGPath svg = new SVGPath();
+        svg.setContent(
+                "M420.361,192.229c-1.83-0.297-3.682-0.434-5.535-0.41H99.305l6.88-3.2c6.725-3.183,12.843-7.515,18.08-12.8l88.48-88.48,c11.653-11.124,13.611-29.019,4.64-42.4c-10.441-14.259-30.464-17.355-44.724-6.914c-1.152,0.844-2.247,1.764-3.276,2.754,l-160,160C-3.119,213.269-3.13,233.53,9.36,246.034c0.008,0.008,0.017,0.017,0.025,0.025l160,160,c12.514,12.479,32.775,12.451,45.255-0.063c0.982-0.985,1.899-2.033,2.745-3.137c8.971-13.381,7.013-31.276-4.64-42.4,l-88.32-88.64c-4.695-4.7-10.093-8.641-16-11.68l-9.6-4.32h314.24c16.347,0.607,30.689-10.812,33.76-26.88,C449.654,211.494,437.806,195.059,420.361,192.229z"
+        );
+        final Region svgShape = new Region();
+        svgShape.setShape(svg);
+        svgShape.setStyle("-fx-background-color: black");
+        svgShape.setMinSize(35,25);
+        svgShape.relocate(200,200);
+
+        svgShape.setOnMouseClicked(e -> {
+            System.out.println("Going back!");
+        });
+
+        this.getRoot().getChildren().add(svgShape);
+
+        TranslateTransition translatePane = new TranslateTransition();
+        translatePane.setDuration(Duration.millis(1000));
+        translatePane.setByX(-this.getWidth());
+        translatePane.setCycleCount(1);
+        translatePane.setNode(this.getRoot());
+
+        Button translationButton = new Button("Transition");
+        translationButton.relocate(200,300);
+        translationButton.setPrefSize(120,50);
+        translationButton.setFont(Font.font(18));
+        translationButton.setOnAction(e -> {
+            translatePane.play();
+        });
+
+        translatePane.setOnFinished(e -> {
+            this.manager.changeScene(this.parent.entryScene);
+        });
+
+        this.getRoot().setStyle("-fx-background-color: white");
+
+        this.getRoot().getChildren().add(translationButton);
+
+        // GAME OVER
+        this.gameOver = new Label("Game over");
+        this.gameOver.relocate(
+                ((double) this.getWidth() / 2) - 130
+                ,280
+        );
+
+        this.gameOver.setFont(Font.font("Arial",FontWeight.BOLD,52));
+
+        //Instantiating TranslateTransition class
+        TranslateTransition translate = new TranslateTransition();
+        FadeTransition fadeTransition = new FadeTransition(Duration.millis(1000),this.gameOver);
+
+        fadeTransition.setFromValue(0.0);
+        fadeTransition.setToValue(1.0);
+        fadeTransition.play();
+
+        //shifting the X coordinate of the centre of the circle by 400
+        translate.setByY(-30);
+
+        //setting the duration for the Translate transition
+        translate.setDuration(Duration.millis(800));
+
+        //setting cycle count for the Translate transition
+        translate.setCycleCount(Animation.INDEFINITE);
+
+        //the transition will set to be auto reversed by setting this to true
+        translate.setAutoReverse(true);
+
+        //setting Circle as the node onto which the transition will be applied
+        translate.setNode(this.gameOver);
+
+        //playing the transition
+        translate.play();
+
+        this.getRoot().getChildren().add(this.gameOver);
+
+    }
 }
