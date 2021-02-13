@@ -13,13 +13,13 @@ package Proyectos.Pong;
     
 */
 
-import com.sun.javafx.tk.FontLoader;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -29,8 +29,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -50,6 +52,9 @@ public class Pong_carlos_pomares extends Application {
             ,VERSION = "1.0"
             , AUTHOR = "Carlos Pomares";
 
+    // STAGE
+    private Stage stage;
+
     // MANAGER
     private SceneManager manager;
 
@@ -68,6 +73,9 @@ public class Pong_carlos_pomares extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
+        // SET STAGE
+        this.stage = stage;
+
         // ASSIGN WIDTH AND HEIGHT
         this.WIDTH = 800;
         this.HEIGHT = 600;
@@ -80,6 +88,9 @@ public class Pong_carlos_pomares extends Application {
         this.gameScene = new GameScene(this.WIDTH,this.HEIGHT,this);
         this.overScene = new OverScene(this.WIDTH,this.HEIGHT,this);
 
+        // SCENE PROPERTIES IF EXISTS
+        this.gameScene.setMaxPoints(this.WINNER_ROUNDS);
+
         // REGISTER AVAILABLE SCENES
         this.manager.registerScene(entryScene);
         this.manager.registerScene(gameScene);
@@ -89,12 +100,12 @@ public class Pong_carlos_pomares extends Application {
         this.manager.changeScene(entryScene);
 
         // STAGE
-        stage.setScene(this.manager.getScene());
-        stage.setTitle(String.format(
+        this.stage.setScene(this.manager.getScene());
+        this.stage.setTitle(String.format(
                 "%s - V%s", this.TITLE, this.VERSION
         ));
-        stage.setResizable(false);
-        stage.show();
+        this.stage.setResizable(false);
+        this.stage.show();
 
     }
 
@@ -104,6 +115,10 @@ public class Pong_carlos_pomares extends Application {
 
     public int getWidth() {
         return WIDTH;
+    }
+
+    public Stage getStage() {
+        return stage;
     }
 
     public static void main(String[] args) {
@@ -253,12 +268,66 @@ abstract class PongScene implements Component {
 
 class EntryScene extends PongScene {
 
+    static class AnimatedComponent {
+
+        public static Button animateButton(Button button){
+
+            // BUTTON ANIMATION
+            final ScaleTransition buttonTransition = new ScaleTransition(Duration.millis(1000));
+            buttonTransition.setNode(button);
+
+            //Setting the dimensions for scaling
+            buttonTransition.setByY(.2);
+            buttonTransition.setByX(.2);
+
+            //Setting the cycle count for the translation
+            buttonTransition.setCycleCount(Animation.INDEFINITE);
+
+            //Setting auto reverse value to true
+            buttonTransition.setAutoReverse(true);
+
+            //Playing the animation
+            button.setOnMouseEntered(e -> buttonTransition.play());
+
+            button.setOnMouseExited(e -> {
+                buttonTransition.jumpTo(Duration.ZERO);
+                buttonTransition.stop();
+            });
+
+            return button;
+        }
+        public static Node animateNode(Node node){
+            final ScaleTransition nodeTransition = new ScaleTransition(Duration.millis(3000));
+            nodeTransition.setNode(node);
+
+            nodeTransition.setByY(.1);
+            nodeTransition.setByX(.1);
+
+            nodeTransition.setCycleCount(Animation.INDEFINITE);
+
+            nodeTransition.setAutoReverse(true);
+
+            nodeTransition.play();
+
+            return node;
+        }
+
+    }
+
     // ENTRY COMPONENTS
+    private StackPane title;
     private StackPane options;
+
     private Label entryTitle;
+
     private Button sceneChange;
     private Button optionsChange;
     private Button exitOption;
+
+    // BACKGROUND ADDS
+    private Circle topCircle;
+    private Circle topCircleShadow;
+
 
     public EntryScene(int width, int height, Pong_carlos_pomares parent){
         super(width,height, parent);
@@ -266,55 +335,92 @@ class EntryScene extends PongScene {
 
     @Override
     public void generateComponents() {
+
+        this.getRoot().setStyle("-fx-background-color: white");
+
+        this.title = new StackPane();
+        this.title.setPrefSize(400,80);
+
         this.options = new StackPane();
-        this.options.setPrefSize(400,200);
+        this.options.setPrefSize(400,250);
+        this.options.setStyle("-fx-padding: 1.5em");
 
         // LABELS
-        this.entryTitle = new Label("Pong");
-        this.entryTitle.setFont(Font.font(56));
+        this.entryTitle = new Label("PONG");
+        this.entryTitle.setFont(Font.font("Arial", FontWeight.BOLD,56));
 
         // BUTTONS
         this.sceneChange = new Button("Start game!");
         this.sceneChange.setPrefSize(120,50);
-        this.optionsChange = new Button("Options!");
+        this.sceneChange.setTextFill(Color.WHITE);
+        this.sceneChange.setStyle("-fx-background-color: #444");
+
+        this.optionsChange = new Button("Options");
         this.optionsChange.setPrefSize(120,50);
+        this.optionsChange.setTextFill(Color.WHITE);
+        this.optionsChange.setStyle("-fx-background-color: #444");
+
         this.exitOption = new Button("Exit");
         this.exitOption.setPrefSize(120,50);
+        this.exitOption.setTextFill(Color.WHITE);
+        this.exitOption.setStyle("-fx-background-color: #444");
+
+        // BACKGROUND
+        this.topCircle = new Circle(150,Color.BLUEVIOLET);
+        this.topCircleShadow = new Circle(180,Color.BLUEVIOLET);
+        this.topCircleShadow.setOpacity(0.2);
+
     }
 
     @Override
     public void loadComponents() {
 
         // LABEL
-        this.getRoot().getChildren().add(this.entryTitle);
+        this.getRoot().getChildren().add(this.title);
+        this.title.getChildren().add(this.entryTitle);
 
         // OPTIONS
         this.getRoot().getChildren().add(this.options);
-        this.options.getChildren().add(this.sceneChange);
-        this.options.getChildren().add(this.optionsChange);
-        this.options.getChildren().add(this.exitOption);
+        this.options.getChildren().add(AnimatedComponent.animateButton(this.sceneChange));
+        this.options.getChildren().add(AnimatedComponent.animateButton(this.optionsChange));
+        this.options.getChildren().add(AnimatedComponent.animateButton(this.exitOption));
+
+        // BACKGROUND
+        this.getRoot().getChildren().add(this.topCircle);
+        this.getRoot().getChildren().add(AnimatedComponent.animateNode(this.topCircleShadow));
 
     }
 
     @Override
     public void relocateComponents() {
 
-        // LABEL
-        this.entryTitle.relocate(
-                (this.getRoot().getBoundsInLocal().getCenterX()),50);
-        this.entryTitle.layout();
+        // TITLE
+        this.title.relocate(
+                (
+                        ((double) this.parent.getWidth() / 2)
+                        - (this.title.getPrefWidth() / 2)
+                ), 80
+        );
 
-        System.out.println(this.entryTitle.getWidth());
+        StackPane.setAlignment(this.entryTitle,Pos.CENTER);
 
         // OPTIONS
         this.options.relocate(
                 (
-                        this.getRoot().getBoundsInLocal().getCenterX()
-                        - (200)
-                ),200);
+                        ((double) this.parent.getWidth() / 2)
+                        - (this.options.getPrefWidth() / 2)
+                ),250
+        );
+
         StackPane.setAlignment(this.sceneChange,Pos.TOP_CENTER);
         StackPane.setAlignment(this.optionsChange,Pos.CENTER);
         StackPane.setAlignment(this.exitOption,Pos.BOTTOM_CENTER);
+
+        // BACKGROUND
+        this.topCircle.relocate(0 - this.topCircle.getRadius(),0 - this.topCircle.getRadius());
+        this.topCircle.toBack();
+        this.topCircleShadow.relocate(0 - this.topCircleShadow.getRadius(),0 - this.topCircleShadow.getRadius());
+        this.topCircleShadow.toBack();
 
     }
 
@@ -322,39 +428,17 @@ class EntryScene extends PongScene {
     public void run() {
         super.run();
 
-        this.sceneChange.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                listener();
-            }
-        });
-
-        // BUTTON ANIMATION
-        final ScaleTransition buttonTransition = new ScaleTransition(Duration.millis(1000));
-        buttonTransition.setNode(this.sceneChange);
-
-        //Setting the dimensions for scaling
-        buttonTransition.setByY(.5);
-        buttonTransition.setByX(.5);
-
-        //Setting the cycle count for the translation
-        buttonTransition.setCycleCount(Animation.INDEFINITE);
-
-        //Setting auto reverse value to true
-        buttonTransition.setAutoReverse(true);
-
-        //Playing the animation
-        this.sceneChange.setOnMouseEntered(e -> buttonTransition.play());
-
-        this.sceneChange.setOnMouseExited(e -> {
-            buttonTransition.jumpTo(Duration.ZERO);
-            buttonTransition.stop();
-        });
+        this.sceneChange.setOnAction(e -> startGameHandler());
+        this.exitOption.setOnAction(e -> exitApplication());
 
     }
 
-    private void listener(){
+    private void startGameHandler(){
         this.manager.changeScene(this.parent.gameScene);
+    }
+
+    private void exitApplication(){
+        this.parent.getStage().close();
     }
 
 }
@@ -366,6 +450,7 @@ class GameScene extends PongScene {
         private double deltaY = 10,velocity = 1.5;
         private Rectangle sprite;
         private int points;
+        private int collisionCounter = 0;
 
         public Player(int WIDTH,int HEIGHT,Color color){
             this.sprite = new Rectangle(WIDTH,HEIGHT,color);
@@ -398,10 +483,34 @@ class GameScene extends PongScene {
 
         public boolean detectCollision(Ball ball){
             if(getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
+                this.collisionCounter++;
+
                 ball.modifyX();
-                ball.accelerate();
+
+                if(collisionCounter > 1 && getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
+                    ball.sprite.setLayoutX(
+                            (ball.getDeltaX() < 0)
+                            ? ball.sprite.getLayoutX() + 1 + (ball.sprite.getRadius() * 2)
+                            : ball.sprite.getLayoutX() -  1 - (ball.sprite.getRadius() * 2)
+                    );
+                }
+
+                if(collisionCounter <= 0) {
+                    ball.increaseCollision();
+                }
+
+
+                if(ball.getConsecutiveCollision() >= 5){
+                    ball.accelerate();
+                }
+            } else if(!getSprite().getBoundsInParent().intersects(ball.getSprite().getBoundsInParent())){
+                resetCounter();
             }
             return false;
+        }
+
+        public void resetCounter(){
+            this.collisionCounter = 0;
         }
 
         public boolean upperLimit(Parent canvas){
@@ -419,6 +528,7 @@ class GameScene extends PongScene {
     }
     class Ball {
 
+        private int consecutiveCollision = 0;
         private final double MAX_VEL = 5;
         private double deltaX, deltaY, velocity;
         private Circle sprite;
@@ -439,7 +549,7 @@ class GameScene extends PongScene {
         }
 
         public void accelerate(){
-            if(this.velocity <= this.MAX_VEL)
+            if(this.velocity < this.MAX_VEL)
                 this.velocity++;
         }
 
@@ -466,7 +576,15 @@ class GameScene extends PongScene {
         }
 
         public void generateAngle(){
-            double angle = Math.toRadians(45);
+            double angle = Math.toRadians(
+                    (lastWinnerPlayer)
+                    ? (Math.random() * 5 + 1 > 2.5)
+                            ? 45 + ((int) (Math.random() * 15) + 1)
+                            : -45 - ((int) (Math.random() * 15) + 1)
+                    : (Math.random() * 5 + 1 > 2.5)
+                            ? 135 + ((int) (Math.random() * 15) + 1)
+                            : -135 - ((int) (Math.random() * 15) + 1)
+            );
             this.velocity = 1;
             this.deltaX = this.velocity * Math.cos(angle);
             this.deltaY = this.velocity * Math.sin(angle);
@@ -475,6 +593,7 @@ class GameScene extends PongScene {
         public void resetProperties(){
             this.leftLimit = false;
             this.rightLimit = false;
+            this.consecutiveCollision = 0;
         }
 
         public void relocateInMiddle(Parent canvas){
@@ -509,6 +628,14 @@ class GameScene extends PongScene {
             return rightLimit;
         }
 
+        public void increaseCollision(){
+            this.consecutiveCollision++;
+        }
+
+        public int getConsecutiveCollision(){
+            return this.consecutiveCollision;
+        }
+
     }
 
     // OBJECTS
@@ -517,21 +644,25 @@ class GameScene extends PongScene {
     private Timeline loop;
 
     // PROPERTIES
-    final private int MAX_POINTS = 2;
     final private int BALL_RADIUS = 15;
     final private double[] P1_POS;
     final private double[] P2_POS;
+    private int maxPoints;
+    private boolean lastWinnerPlayer = false;
 
     // Components
-    private Label points;
+    private Label leftPoint;
+    private Label rightPoint;
+    private Line midLine;
+    private Label spaceRequirement;
 
     public GameScene(int width, int height, Pong_carlos_pomares parent){
         super(width, height, parent);
 
-        this.ball = new Ball(this.BALL_RADIUS,Color.GREEN);
+        this.ball = new Ball(this.BALL_RADIUS,Color.WHITE);
         this.players = new Player[]{
-                new Player(30,80,Color.GREEN),
-                new Player(30,80,Color.GREEN)
+                new Player(10,60,Color.WHITE),
+                new Player(10,60,Color.WHITE)
         };
 
         this.loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
@@ -543,7 +674,7 @@ class GameScene extends PongScene {
         this.loop.setCycleCount(Timeline.INDEFINITE);
         
         this.P1_POS = new double[]{
-                50,
+                90,
                 (((double) this.getHeight() / 2) - this.players[0].getSprite().getHeight())
         };
 
@@ -556,17 +687,43 @@ class GameScene extends PongScene {
 
     @Override
     public void generateComponents() {
-        this.points = new Label("0 - 0");
+        this.leftPoint = new Label("0");
+        this.rightPoint = new Label("0");
+
+        this.midLine = new Line();
+        this.midLine.setEndY(this.getHeight() - 5);
+        this.midLine.setStrokeWidth(5);
+        this.midLine.getStrokeDashArray().addAll(2d, 15d);
+        this.midLine.setStroke(Color.WHITE);
+
+        this.leftPoint.setTextFill(Color.WHITE);
+        this.rightPoint.setTextFill(Color.WHITE);
+        this.leftPoint.setFont(Font.font("Arial",FontWeight.BOLD,22));
+        this.rightPoint.setFont(Font.font("Arial",FontWeight.BOLD,22));
+
+        this.spaceRequirement = new Label("Press space to start.");
+        this.spaceRequirement.setFont(Font.font("Arial",FontWeight.BOLD,56));
+        this.spaceRequirement.setTextFill(Color.WHITE);
+        this.spaceRequirement.setOpacity(.8);
+
+        this.getRoot().setStyle("-fx-background-color: black");
     }
 
     @Override
     public void loadComponents() {
-        this.getRoot().getChildren().add(this.players[0].getSprite());
-        this.getRoot().getChildren().add(this.players[1].getSprite());
-        this.getRoot().getChildren().add(this.ball.getSprite());
-        this.getRoot().getChildren().add(this.points);
 
-        this.getRoot().setStyle("-fx-background-color: black");
+        this.getRoot().getChildren().addAll(
+                this.players[0].getSprite()
+                ,this.players[1].getSprite()
+                ,this.ball.getSprite()
+        );
+
+        this.getRoot().getChildren().addAll(
+                this.leftPoint
+                ,this.rightPoint
+                ,this.midLine);
+
+        this.getRoot().getChildren().add(this.spaceRequirement);
 
     }
 
@@ -575,29 +732,66 @@ class GameScene extends PongScene {
         this.players[0].getSprite().relocate(this.P1_POS[0],this.P1_POS[1]);
         this.players[1].getSprite().relocate(this.P2_POS[0],this.P2_POS[1]);
         this.ball.relocateInMiddle(this.getRoot());
-        this.points.relocate(((double) this.getWidth() / 2),50);
+        this.leftPoint.relocate(
+                (double) this.getWidth() / 2 - 35,
+                50
+        );
+
+        this.rightPoint.relocate(
+                (double) this.getWidth() / 2 + 25,
+                50
+        );
+
+        this.midLine.relocate(
+                (double) this.getWidth() / 2 - 2.5,
+                0
+        );
+        this.midLine.toBack();
+
+
+        this.spaceRequirement.relocate(
+                (double) this.getWidth() / 2 - 280,
+                400
+        );
+        this.spaceRequirement.toFront();
+
     }
 
     @Override
     public void run() {
         super.run();
-        startRound();
+
+        manager.getScene().setOnKeyPressed(e -> {
+            if(e.getCode() == KeyCode.SPACE){
+                this.spaceRequirement.setVisible(false);
+                startRound();
+            }
+        });
+
+    }
+
+    public void setMaxPoints(int maxPoints){
+        assert maxPoints > 0;
+        this.maxPoints = maxPoints;
     }
 
     private void startRound(){
 
-        if(this.players[0].getPoints() == MAX_POINTS)
+        if(this.players[0].getPoints() == maxPoints)
             gameOver();
 
-        if(this.players[1].getPoints() == MAX_POINTS)
+        if(this.players[1].getPoints() == maxPoints)
             gameOver();
 
-        this.points.setText(String.format("%d - %d",this.players[0].getPoints(),this.players[1].getPoints()));
+        this.leftPoint.setText(String.format("%d",this.players[0].getPoints()));
+        this.rightPoint.setText(String.format("%d",this.players[1].getPoints()));
 
         // https://stackoverflow.com/questions/52580865/javafx-multiple-keylisteners-at-once
         final List<KeyCode> acceptedCodes = Arrays.asList(KeyCode.S, KeyCode.W, KeyCode.UP, KeyCode.DOWN);
         final Set<KeyCode> codes = new HashSet<>();
-        manager.getScene().setOnKeyReleased(e -> codes.clear());
+        manager.getScene().setOnKeyReleased(e -> {
+            codes.clear();
+        });
         manager.getScene().setOnKeyPressed(e -> {
             if (acceptedCodes.contains(e.getCode())) {
                 codes.add(e.getCode());
@@ -622,9 +816,11 @@ class GameScene extends PongScene {
 
         if(this.ball.isLeftLimit()) {
             this.players[1].addPoint();
+            this.lastWinnerPlayer = false;
             resetRound();
         }
         if(this.ball.isRightLimit()) {
+            this.lastWinnerPlayer = true;
             this.players[0].addPoint();
             resetRound();
         }
@@ -632,6 +828,7 @@ class GameScene extends PongScene {
         this.players[0].detectCollision(this.ball);
         this.players[1].detectCollision(this.ball);
         this.ball.movement(this.getRoot());
+
     }
 
     private void resetRound(){
