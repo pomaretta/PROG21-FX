@@ -18,24 +18,26 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.sql.Time;
 import java.util.*;
 
 /**
@@ -59,7 +61,7 @@ public class Pong_carlos_pomares extends Application {
     private SceneManager manager;
 
     // SCENES
-    public EntryScene entryScene;
+    public PongScene entryScene;
     public OptionsScene optionsScene;
     public GameScene gameScene;
     public OverScene overScene;
@@ -103,8 +105,9 @@ public class Pong_carlos_pomares extends Application {
         this.manager.registerScene(testScene);
 
         // LOAD FIRST SCENE
-        this.manager.changeScene(entryScene);
-        //this.manager.changeScene(optionsScene);
+        //this.manager.changeScene(entryScene);
+        this.manager.changeScene(overScene);
+        //this.manager.changeScene(testScene);
 
         // STAGE
         this.stage.setScene(this.manager.getScene());
@@ -283,7 +286,6 @@ abstract class PongScene implements Component {
 class EntryScene extends PongScene {
 
     static class AnimatedComponent {
-
         public static Button animateButton(Button button){
 
             // BUTTON ANIMATION
@@ -325,7 +327,6 @@ class EntryScene extends PongScene {
 
             return node;
         }
-
     }
 
     // ENTRY COMPONENTS
@@ -341,7 +342,6 @@ class EntryScene extends PongScene {
     // BACKGROUND ADDS
     private Circle topCircle;
     private Circle topCircleShadow;
-
 
     public EntryScene(int width, int height, Pong_carlos_pomares parent){
         super(width,height, parent);
@@ -611,6 +611,10 @@ class GameScene extends PongScene {
             this.points++;
         }
 
+        public void resetPoints(){
+            this.points = 0;
+        }
+
         public void moveUp(){
             this.sprite.setLayoutY(this.sprite.getLayoutY() - this.deltaY * velocity);
         }
@@ -693,11 +697,18 @@ class GameScene extends PongScene {
             this.sprite.setLayoutX(this.sprite.getLayoutX() + deltaX * velocity);
             this.sprite.setLayoutY(this.sprite.getLayoutY() + deltaY * velocity);
 
-            final Bounds limits = canvas.getBoundsInLocal();
+            // RESIZE PROBLEM
+            /*final Bounds limits = canvas.getBoundsInLocal();
             final boolean leftLimit = this.sprite.getLayoutX() <= (limits.getMinX() + this.sprite.getRadius());
             final boolean rightLimit = this.sprite.getLayoutX() >= (limits.getMaxX() - this.sprite.getRadius());
             final boolean upperLimit = this.sprite.getLayoutY() <= (limits.getMinY() + this.sprite.getRadius());
-            final boolean lowerLimit = this.sprite.getLayoutY() >= (limits.getMaxY() - this.sprite.getRadius());
+            final boolean lowerLimit = this.sprite.getLayoutY() >= (limits.getMaxY() - this.sprite.getRadius());*/
+
+            // RESIZE SOLUTION
+            final boolean leftLimit = this.sprite.getLayoutX() <= (0 + this.sprite.getRadius());
+            final boolean rightLimit = this.sprite.getLayoutX() >= (getWidth() - this.sprite.getRadius());
+            final boolean upperLimit = this.sprite.getLayoutY() <= (0 + this.sprite.getRadius());
+            final boolean lowerLimit = this.sprite.getLayoutY() >= (getHeight() - this.sprite.getRadius());
 
             if(leftLimit)
                 this.leftLimit = true;
@@ -778,12 +789,18 @@ class GameScene extends PongScene {
     private Ball ball;
     private Timeline loop;
 
+    // ADDITIONS
+    private FireEmitter fireEffect;
+    private ParticleSystem particleSystem;
+    private Canvas fireEffectCanvas;
+
     // PROPERTIES
     final private int BALL_RADIUS = 15;
     final private double[] P1_POS;
     final private double[] P2_POS;
     private int maxPoints;
     private boolean lastWinnerPlayer = false;
+    private boolean playing = true;
 
     // Components
     private Label leftPoint;
@@ -794,6 +811,13 @@ class GameScene extends PongScene {
 
     public GameScene(int width, int height, Pong_carlos_pomares parent){
         super(width, height, parent);
+
+        this.getRoot().setMaxHeight(this.getHeight());
+        this.getRoot().setMaxWidth(this.getWidth());
+
+        this.fireEffectCanvas = new Canvas(100,100);
+        this.fireEffect = new FireEmitter(Color.rgb(220,40,65),15,1,0.5,0.5);
+        this.particleSystem = new ParticleSystem(fireEffect,fireEffectCanvas);
 
         this.ball = new Ball(this.BALL_RADIUS,Color.WHITE);
         this.players = new Player[]{
@@ -807,6 +831,7 @@ class GameScene extends PongScene {
                 roundHandler();
             }
         }));
+
         this.loop.setCycleCount(Timeline.INDEFINITE);
         
         this.P1_POS = new double[]{
@@ -869,6 +894,8 @@ class GameScene extends PongScene {
                 this.gameOver
         );
 
+        this.getRoot().getChildren().add(this.fireEffectCanvas);
+
     }
 
     @Override
@@ -876,6 +903,9 @@ class GameScene extends PongScene {
         this.players[0].getSprite().relocate(this.P1_POS[0],this.P1_POS[1]);
         this.players[1].getSprite().relocate(this.P2_POS[0],this.P2_POS[1]);
         this.ball.relocateInMiddle(this.getRoot());
+
+        this.fireEffectCanvas.relocate(this.ball.sprite.getLayoutX() - 50,this.ball.sprite.getLayoutY() - 50);
+
         this.leftPoint.relocate(
                 (double) this.getWidth() / 2 - 35,
                 50
@@ -911,12 +941,19 @@ class GameScene extends PongScene {
     public void run() {
         super.run();
 
+        this.loop.stop();
+
         manager.getScene().setOnKeyPressed(e -> {
             if(e.getCode() == KeyCode.SPACE){
                 this.spaceRequirement.setVisible(false);
                 startRound();
             }
         });
+
+        this.playing = true;
+        this.ball.sprite.setVisible(true);
+        this.players[0].resetPoints();
+        this.players[1].resetPoints();
 
     }
 
@@ -927,11 +964,9 @@ class GameScene extends PongScene {
 
     private void startRound(){
 
-        if(this.players[0].getPoints() == maxPoints)
-            gameOver();
-
-        if(this.players[1].getPoints() == maxPoints)
-            gameOver();
+        if(this.players[0].getPoints() == maxPoints || this.players[1].getPoints() == maxPoints) {
+            this.playing = false;
+        }
 
         this.leftPoint.setText(String.format("%d",this.players[0].getPoints()));
         this.rightPoint.setText(String.format("%d",this.players[1].getPoints()));
@@ -958,7 +993,12 @@ class GameScene extends PongScene {
             }
         });
 
-        loop.play();
+        if(this.playing) {
+            loop.play();
+            particleSystem.run();
+        } else {
+            gameOver();
+        }
 
     }
 
@@ -979,6 +1019,26 @@ class GameScene extends PongScene {
         this.players[1].detectCollision(this.ball);
         this.ball.movement(this.getRoot());
 
+        this.fireEffectCanvas.setLayoutX(this.ball.sprite.getLayoutX() - 50);
+        this.fireEffectCanvas.setLayoutY(this.ball.sprite.getLayoutY() - 50);
+
+        if(this.ball.velocity > 1){
+            this.fireEffectCanvas.setVisible(true);
+            if(this.ball.deltaX > 0){
+                this.fireEffect.xPoint = -0.5;
+            } else {
+                this.fireEffect.xPoint = 0.5;
+            }
+
+            if(this.ball.deltaY > 0){
+                this.fireEffect.yPoint = -0.5;
+            } else {
+                this.fireEffect.yPoint = 0.5;
+            }
+        } else {
+            this.fireEffectCanvas.setVisible(false);
+        }
+
     }
 
     private void resetRound(){
@@ -990,7 +1050,7 @@ class GameScene extends PongScene {
 
     private void gameOver() {
 
-        this.loop.stop();
+        this.ball.sprite.setVisible(false);
 
         TranslateTransition translateTransition = new TranslateTransition(Duration.millis(800),this.gameOver);
         FadeTransition fadeTransition = new FadeTransition(Duration.millis(1000),this.gameOver);
@@ -1022,6 +1082,20 @@ class OverScene extends PongScene {
     // COMPONENTS
     private Label winner;
 
+    // PODIUM
+    private Rectangle firstPosition;
+    private Rectangle secondPosition;
+    private Rectangle thirdPosition;
+
+    private Circle firstPlayer;
+    private Label firstPlayerTagname;
+
+    private Circle secondPlayer;
+    private Label secondPlayerTagname;
+
+    private Circle thirdPlayer;
+    private Label thirdPlayerTagname;
+
     public OverScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
     }
@@ -1029,17 +1103,45 @@ class OverScene extends PongScene {
     @Override
     public void generateComponents() {
         this.winner = new Label();
-        setWinner();
+        //setWinner();
+
+        this.firstPosition = new Rectangle(250,350,Color.YELLOW);
+        this.secondPosition = new Rectangle(200,200,Color.GRAY);
+        this.thirdPosition = new Rectangle(200,150,Color.BROWN);
+
     }
 
     @Override
     public void loadComponents() {
         this.getRoot().getChildren().add(this.winner);
+
+        this.getRoot().getChildren().addAll(
+                this.firstPosition,
+                this.secondPosition,
+                this.thirdPosition
+        );
     }
 
     @Override
     public void relocateComponents() {
         this.winner.relocate(100,100);
+
+        // PODIUM
+        this.firstPosition.relocate(
+                ((double) this.getWidth() / 2) - this.firstPosition.getWidth() / 2
+                ,this.getHeight() - this.firstPosition.getHeight()
+        );
+
+        this.secondPosition.relocate(
+                ((double) this.getWidth() / 2) - this.secondPosition.getWidth() / 2 + 200
+                ,this.getHeight() - this.secondPosition.getHeight()
+        );
+
+        this.thirdPosition.relocate(
+                ((double) this.getWidth() / 2) - this.thirdPosition.getWidth() / 2 - 200
+                ,this.getHeight() - this.thirdPosition.getHeight()
+        );
+
     }
 
     public void setPlayers(GameScene.Player[] players){
@@ -1058,8 +1160,6 @@ class OverScene extends PongScene {
 }
 
 class TestScene extends PongScene {
-
-    private Label gameOver;
 
     public TestScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
@@ -1082,80 +1182,258 @@ class TestScene extends PongScene {
     public void run() {
         super.run();
 
-        SVGPath svg = new SVGPath();
-        svg.setContent(
-                "M420.361,192.229c-1.83-0.297-3.682-0.434-5.535-0.41H99.305l6.88-3.2c6.725-3.183,12.843-7.515,18.08-12.8l88.48-88.48,c11.653-11.124,13.611-29.019,4.64-42.4c-10.441-14.259-30.464-17.355-44.724-6.914c-1.152,0.844-2.247,1.764-3.276,2.754,l-160,160C-3.119,213.269-3.13,233.53,9.36,246.034c0.008,0.008,0.017,0.017,0.025,0.025l160,160,c12.514,12.479,32.775,12.451,45.255-0.063c0.982-0.985,1.899-2.033,2.745-3.137c8.971-13.381,7.013-31.276-4.64-42.4,l-88.32-88.64c-4.695-4.7-10.093-8.641-16-11.68l-9.6-4.32h314.24c16.347,0.607,30.689-10.812,33.76-26.88,C449.654,211.494,437.806,195.059,420.361,192.229z"
-        );
-        final Region svgShape = new Region();
-        svgShape.setShape(svg);
-        svgShape.setStyle("-fx-background-color: black");
-        svgShape.setMinSize(35,25);
-        svgShape.relocate(200,200);
+        Circle circle = new Circle(15,Color.WHITE);
+        this.getRoot().setStyle("-fx-background-color: #fff");
+        Canvas canvas = new Canvas(300,300);
+        ConfettiEmitter confettiEmitter = new ConfettiEmitter(2,5,5,2,5);
 
-        svgShape.setOnMouseClicked(e -> {
-            System.out.println("Going back!");
-        });
+        this.getRoot().getChildren().add(canvas);
 
-        this.getRoot().getChildren().add(svgShape);
+        this.getRoot().getChildren().add(circle);
+        //circle.relocate(100,100);
+        //canvas.relocate(100,100);
+        canvas.relocate((double) this.getWidth() / 2 - 50,0);
 
-        TranslateTransition translatePane = new TranslateTransition();
-        translatePane.setDuration(Duration.millis(1000));
-        translatePane.setByX(-this.getWidth());
-        translatePane.setCycleCount(1);
-        translatePane.setNode(this.getRoot());
+        // TOP-L
+        // x: -0.5 y: -0.5
+        // TOP-R
+        // x: 0.5 y: -0.5
 
-        Button translationButton = new Button("Transition");
-        translationButton.relocate(200,300);
-        translationButton.setPrefSize(120,50);
-        translationButton.setFont(Font.font(18));
-        translationButton.setOnAction(e -> {
-            translatePane.play();
-        });
+        // MID-L
+        // x: -0.5 y: (Math.random() * 2 > 1) ? 0.15 : -0.15
+        // MID-R
+        // x: 0.5 y: (Math.random() * 2 > 1) ? 0.15 : -0.15
 
-        translatePane.setOnFinished(e -> {
-            this.manager.changeScene(this.parent.entryScene);
-        });
+        // BOT-L
+        // x: -0.5 y: 0.5
+        // BOT-R
+        // x: 0.5 y: 0.5
 
-        this.getRoot().setStyle("-fx-background-color: white");
+        ParticleSystem particleSystem = new ParticleSystem(confettiEmitter,canvas,BlendMode.EXCLUSION);
+        particleSystem.run();
 
-        this.getRoot().getChildren().add(translationButton);
+        Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
 
-        // GAME OVER
-        this.gameOver = new Label("Game over");
-        this.gameOver.relocate(
-                ((double) this.getWidth() / 2) - 130
-                ,280
-        );
+            @Override
+            public void handle(ActionEvent event) {
 
-        this.gameOver.setFont(Font.font("Arial",FontWeight.BOLD,52));
+                //circle.relocate(circle.getLayoutX() + deltaX, 100);
+                //canvas.relocate(circle.getLayoutX() - 50, circle.getLayoutY() - 50);
 
-        //Instantiating TranslateTransition class
-        TranslateTransition translate = new TranslateTransition();
-        FadeTransition fadeTransition = new FadeTransition(Duration.millis(1000),this.gameOver);
+            }
+        }));
+        loop.setCycleCount(Animation.INDEFINITE);
+        loop.play();
 
-        fadeTransition.setFromValue(0.0);
-        fadeTransition.setToValue(1.0);
-        fadeTransition.play();
+    }
+}
 
-        //shifting the X coordinate of the centre of the circle by 400
-        translate.setByY(-30);
+/*
+ *
+ *   PARTICLE SYSTEM
+ *
+ * */
 
-        //setting the duration for the Translate transition
-        translate.setDuration(Duration.millis(800));
+abstract class Emitter {
+    public abstract List<Particle> emit(double x, double y);
+}
 
-        //setting cycle count for the Translate transition
-        translate.setCycleCount(Animation.INDEFINITE);
+class Particle {
 
-        //the transition will set to be auto reversed by setting this to true
-        translate.setAutoReverse(true);
+    private double x;
+    private double y;
 
-        //setting Circle as the node onto which the transition will be applied
-        translate.setNode(this.gameOver);
+    private Point2D velocity;
 
-        //playing the transition
-        translate.play();
+    private double radius;
+    private double life = 1.0;
+    private double decay;
 
-        this.getRoot().getChildren().add(this.gameOver);
+    private Paint color;
+    private BlendMode blendMode;
 
+    public Particle(double x, double y, Point2D velocity, double radius, double expireTime, Paint color, BlendMode blendMode) {
+        this.x = x;
+        this.y = y;
+        this.velocity = velocity;
+        this.radius = radius;
+        this.decay = 0.016 / expireTime;
+        this.color = color;
+        this.blendMode = blendMode;
+    }
+
+    public boolean isAlive(){
+        return life > 0;
+    }
+
+    public void update(){
+        x += velocity.getX();
+        y += velocity.getY();
+        life -= decay;
+    }
+
+    public void render(GraphicsContext g){
+        g.setGlobalAlpha(life);
+        g.setGlobalBlendMode(blendMode);
+        g.setFill(color);
+        g.fillOval(x,y,radius,radius);
+    }
+
+}
+
+class ParticleSystem {
+
+    final private Emitter EMITTER;
+    final private Canvas CANVAS;
+    final private List<Particle> PARTICLES = new ArrayList<>();
+
+    private GraphicsContext g;
+    public AnimationTimer timer;
+
+    public ParticleSystem(Emitter emitter, Canvas canvas){
+        this.EMITTER = emitter;
+        this.CANVAS = canvas;
+        this.CANVAS.setBlendMode(BlendMode.SCREEN);
+    }
+
+    public ParticleSystem(Emitter emitter, Canvas canvas,BlendMode blendMode){
+        this.EMITTER = emitter;
+        this.CANVAS = canvas;
+        this.CANVAS.setBlendMode(blendMode);
+    }
+
+    private void onUpdate(){
+
+        g.setGlobalAlpha(1.0);
+        g.setGlobalBlendMode(BlendMode.SRC_OVER);
+        g.setFill(Color.BLACK);
+        g.fillRect(0,0,this.CANVAS.getWidth(),this.CANVAS.getHeight());
+
+        // PARTICLES CONST
+        this.PARTICLES.addAll(this.EMITTER.emit(
+                this.CANVAS.getWidth() / 2,
+                this.CANVAS.getHeight() / 2
+        ));
+
+        for(Iterator<Particle> it = this.PARTICLES.iterator(); it.hasNext();){
+            Particle p = it.next();
+            p.update();
+            if(!p.isAlive()){
+                it.remove();
+                continue;
+            }
+            p.render(g);
+        }
+
+    }
+
+    public void run(){
+
+        g = this.CANVAS.getGraphicsContext2D();
+
+        this.timer = new AnimationTimer() {
+            @Override
+            public void handle(long l) {
+                onUpdate();
+            }
+        };
+
+        timer.start();
+
+    }
+
+}
+
+/*
+ *
+ *   EFFECTS
+ *
+ * */
+
+class FireEmitter extends Emitter {
+
+    final private Color COLOR;
+    final private int NUM_PARTICLES;
+    final private int LIFETIME;
+
+    public double xPoint, yPoint;
+
+    public FireEmitter(Color color, int numPartciles, int lifetime, double xPoint, double yPoint) {
+        this.COLOR = color;
+        this.NUM_PARTICLES = numPartciles;
+        this.LIFETIME = lifetime;
+        this.xPoint = xPoint;
+        this.yPoint = yPoint;
+    }
+
+    @Override
+    public List<Particle> emit(double x, double y) {
+        List<Particle> particles = new ArrayList<>();
+        for (int i = 0; i < this.NUM_PARTICLES; i++) {
+            Particle particle = new Particle(x,y,new Point2D( Math.random() * xPoint,Math.random() * yPoint),
+                    10,this.LIFETIME,this.COLOR,BlendMode.ADD);
+            particles.add(particle);
+        }
+        return particles;
+    }
+
+}
+
+class BubbleEmitter extends Emitter {
+
+    final private Color COLOR;
+    final private int NUM_PARTICLES;
+    final private int LIFETIME;
+    final private int RADIUS;
+
+    public double xPoint, yPoint;
+
+    public BubbleEmitter(Color color, int numParticles, int lifetime, double xPoint, double yPoint, int radius) {
+        this.COLOR = color;
+        this.NUM_PARTICLES = numParticles;
+        this.LIFETIME = lifetime;
+        this.RADIUS = radius;
+        this.xPoint = xPoint;
+        this.yPoint = yPoint;
+    }
+
+    @Override
+    public List<Particle> emit(double x, double y) {
+        List<Particle> particles = new ArrayList<>();
+        for (int i = 0; i < this.NUM_PARTICLES; i++) {
+            Particle particle = new Particle(x,y,new Point2D( (Math.random() * xPoint),(Math.random() * yPoint)),
+                    this.RADIUS,this.LIFETIME,this.COLOR,BlendMode.LIGHTEN);
+            particles.add(particle);
+        }
+        return particles;
+    }
+
+}
+
+class ConfettiEmitter extends Emitter {
+
+    final private int NUM_PARTICLES;
+    final private int LIFETIME;
+    final private int RADIUS;
+    final private double xPoint;
+    final private double yPoint;
+
+    public ConfettiEmitter(int numParticles, int lifetime, int radius, double x, double y) {
+        this.NUM_PARTICLES = numParticles;
+        this.LIFETIME = lifetime;
+        this.RADIUS = radius;
+        this.xPoint = x;
+        this.yPoint = y;
+    }
+
+    @Override
+    public List<Particle> emit(double x, double y) {
+        List<Particle> particles = new ArrayList<>();
+        for (int i = 0; i < this.NUM_PARTICLES; i++) {
+            Particle particle = new Particle(x,y,new Point2D( (Math.random() * this.xPoint),(Math.random() * yPoint)),
+                    this.RADIUS,this.LIFETIME,Color.rgb((int) (Math.random() * 255),(int) (Math.random() * 255), (int) (Math.random() * 255)),BlendMode.LIGHTEN);
+            particles.add(particle);
+        }
+        return particles;
     }
 }
