@@ -25,8 +25,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
@@ -35,6 +34,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -106,7 +106,7 @@ public class Pong_carlos_pomares extends Application {
 
         // LOAD FIRST SCENE
         //this.manager.changeScene(entryScene);
-        this.manager.changeScene(overScene);
+        this.manager.changeScene(optionsScene);
         //this.manager.changeScene(testScene);
 
         // STAGE
@@ -479,7 +479,20 @@ class OptionsScene extends PongScene {
     private Label sceneTitle;
     private Region backArrow;
 
-    private StackPane optionsPane;
+    private Font optionsTitleFont = Font.font("Arial",FontWeight.BOLD,18);
+    private Label gameOptionsTitle;
+    private StackPane gameOptions;
+    private Label playerOptionsTitle;
+    private StackPane playerOptions;
+
+    private TextField playerName;
+    private TextField playerColor;
+
+    // GAME OPTIONS
+    private RadioButton defaultVelocity;
+    private RadioButton maxVelocity;
+    private ToggleGroup velocityGroup;
+    private Slider velocitySlider;
 
     public OptionsScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
@@ -490,10 +503,25 @@ class OptionsScene extends PongScene {
 
         this.getRoot().setStyle("-fx-background-color: white");
 
+        // Title
         this.sceneTitle = new Label("Options Menu");
         this.sceneTitle.setFont(Font.font("Arial",FontWeight.BOLD,42));
 
+        // Arrow
         this.backArrow = generateArrow(50,40,"black");
+
+        // Options
+        this.playerOptionsTitle = new Label("Player Options");
+        this.playerOptionsTitle.setFont(this.optionsTitleFont);
+        this.playerOptions = new StackPane();
+        this.playerOptions.setPrefSize(300,350);
+        this.playerOptions.setStyle("-fx-background-color: blue");
+
+        this.gameOptionsTitle = new Label("Game Options");
+        this.gameOptionsTitle.setFont(this.optionsTitleFont);
+        this.gameOptions = new StackPane();
+        this.gameOptions.setPrefSize(300,350);
+        this.gameOptions.setStyle("-fx-background-color: blue");
 
     }
 
@@ -502,6 +530,13 @@ class OptionsScene extends PongScene {
         this.getRoot().getChildren().addAll(
                 this.sceneTitle
                 ,this.backArrow
+        );
+
+        this.getRoot().getChildren().addAll(
+                this.playerOptionsTitle,
+                this.gameOptionsTitle,
+                this.playerOptions,
+                this.gameOptions
         );
     }
 
@@ -518,12 +553,38 @@ class OptionsScene extends PongScene {
                 55
         );
 
+        this.playerOptionsTitle.relocate(
+                135
+                , 150
+        );
+
+        this.playerOptions.relocate(
+                50
+                , 200
+        );
+
+        this.gameOptionsTitle.relocate(
+                this.getWidth() - this.gameOptions.getPrefWidth() + 45,
+                150
+        );
+
+        this.gameOptions.relocate(
+                this.getWidth() - this.gameOptions.getPrefWidth() - 50
+                ,200
+        );
+
     }
 
     @Override
     public void run() {
         super.run();
+        arrowFunction();
 
+
+
+    }
+
+    private void arrowFunction(){
         ScaleTransition arrowScale = this.animateScale(backArrow);
 
         this.backArrow.setOnMouseEntered(e -> {
@@ -538,7 +599,6 @@ class OptionsScene extends PongScene {
         this.backArrow.setOnMouseClicked(e -> {
             goToTitleScreen();
         });
-
     }
 
     private Region generateArrow(int minWidth, int minHeight, String fxColor){
@@ -589,10 +649,12 @@ class GameScene extends PongScene {
         private Rectangle sprite;
         private int points;
         private int collisionCounter = 0;
+        private String name;
 
-        public Player(int WIDTH,int HEIGHT,Color color){
+        public Player(int WIDTH,int HEIGHT,Color color,String playerName){
             this.sprite = new Rectangle(WIDTH,HEIGHT,color);
             this.sprite.setStyle("-fx-background-radius: 25px");
+            this.name = playerName;
         }
 
         public double getDeltaY() {
@@ -605,6 +667,10 @@ class GameScene extends PongScene {
 
         public int getPoints() {
             return points;
+        }
+
+        public String getName(){
+            return this.name;
         }
 
         public void addPoint(){
@@ -668,7 +734,7 @@ class GameScene extends PongScene {
     class Ball {
 
         private int consecutiveCollision = 0;
-        private final double MAX_VEL = 5;
+        private double maxVelocity = 5;
         private double deltaX, deltaY, velocity;
         private Circle sprite;
 
@@ -677,6 +743,14 @@ class GameScene extends PongScene {
         public Ball(int radius, Color color){
             this.sprite = new Circle(radius,color);
             generateAngle();
+        }
+
+        public void setMaxVelocity(int maxVelocity){
+            this.maxVelocity = maxVelocity;
+        }
+
+        public void setDefaultVelocity(int defaultVelocity){
+            this.velocity = defaultVelocity;
         }
 
         public void modifyY(){
@@ -688,7 +762,7 @@ class GameScene extends PongScene {
         }
 
         public void accelerate(){
-            if(this.velocity < this.MAX_VEL)
+            if(this.velocity < this.maxVelocity)
                 this.velocity++;
         }
 
@@ -785,7 +859,7 @@ class GameScene extends PongScene {
     }
 
     // OBJECTS
-    private Player[] players;
+    public Player[] players;
     private Ball ball;
     private Timeline loop;
 
@@ -821,8 +895,8 @@ class GameScene extends PongScene {
 
         this.ball = new Ball(this.BALL_RADIUS,Color.WHITE);
         this.players = new Player[]{
-                new Player(10,60,Color.WHITE),
-                new Player(10,60,Color.WHITE)
+                new Player(10,60,Color.WHITE,"Player 0"),
+                new Player(10,60,Color.WHITE, "Player 1")
         };
 
         this.loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
@@ -1050,6 +1124,7 @@ class GameScene extends PongScene {
 
     private void gameOver() {
 
+        this.loop.stop();
         this.ball.sprite.setVisible(false);
 
         TranslateTransition translateTransition = new TranslateTransition(Duration.millis(800),this.gameOver);
@@ -1076,16 +1151,51 @@ class GameScene extends PongScene {
 
 class OverScene extends PongScene {
 
+    static class AnimateNode {
+        public static TranslateTransition translateNode(Duration duration, double setByY){
+            TranslateTransition translateTransition = new TranslateTransition(duration);
+            translateTransition.setByY(setByY);
+            translateTransition.setCycleCount(1);
+            return translateTransition;
+        }
+        public static FadeTransition fadeNode(Duration duration, double from, double to){
+            FadeTransition fadeTransition = new FadeTransition(duration);
+            fadeTransition.setFromValue(from);
+            fadeTransition.setToValue(to);
+            fadeTransition.setCycleCount(1);
+            return fadeTransition;
+        }
+        public static ScaleTransition animateScale(Duration duration,int cycleCount,double setByX, double setByY,boolean autoreverse){
+            ScaleTransition scaleTransition = new ScaleTransition(duration);
+            scaleTransition.setCycleCount(cycleCount);
+            scaleTransition.setAutoReverse(autoreverse);
+            scaleTransition.setByX(setByX);
+            scaleTransition.setByY(setByY);
+            return scaleTransition;
+        }
+    }
+
     // OBJECTS
     private GameScene.Player[] players;
 
+    // PARTICLES
+    private Canvas canvas;
+    private ConfettiEmitter confettiEffect;
+    private ParticleSystem particleSystem;
+    private Timeline particleIterator;
+
     // COMPONENTS
-    private Label winner;
+    final private Font tagNameFont = Font.font("Arial",FontWeight.BOLD,22);
+    private Region backArrow;
 
     // PODIUM
     private Rectangle firstPosition;
     private Rectangle secondPosition;
     private Rectangle thirdPosition;
+
+    private StackPane firstPlayerContainer;
+    private StackPane secondPlayerContainer;
+    private StackPane thirdPlayerContainer;
 
     private Circle firstPlayer;
     private Label firstPlayerTagname;
@@ -1096,52 +1206,194 @@ class OverScene extends PongScene {
     private Circle thirdPlayer;
     private Label thirdPlayerTagname;
 
+    // ANIMATIONS
+    ScaleTransition arrowScale;
+    FadeTransition arrowFade;
+
+    TranslateTransition translateFirstPosition;
+    TranslateTransition translateSecondPosition;
+    TranslateTransition translateThirdPosition;
+
+    FadeTransition fadeFirstPlayer;
+    FadeTransition fadeSecondPlayer;
+    FadeTransition fadeThirdPlayer;
+
     public OverScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
+
+        arrowScale = AnimateNode.animateScale(Duration.millis(1000),Animation.INDEFINITE,0.2,0.2,true);
+        arrowFade = AnimateNode.fadeNode(Duration.millis(1000),0.0,1.0);
+
+        translateFirstPosition = AnimateNode.translateNode(Duration.millis(2000),-350);
+        translateSecondPosition = AnimateNode.translateNode(Duration.millis(2000),-200);
+        translateThirdPosition = AnimateNode.translateNode(Duration.millis(2000),-150);
+
+        fadeFirstPlayer = AnimateNode.fadeNode(Duration.millis(3000),0.0,1.0);
+        fadeSecondPlayer = AnimateNode.fadeNode(Duration.millis(3000),0.0,1.0);
+        fadeThirdPlayer = AnimateNode.fadeNode(Duration.millis(3000),0.0,1.0);
+
     }
 
     @Override
     public void generateComponents() {
-        this.winner = new Label();
-        //setWinner();
 
+        this.getRoot().setStyle("-fx-background-color: white");
+
+        this.backArrow = generateArrow(50,40,"black");
+        this.backArrow.setOpacity(0.0);
+
+        // PODIUM
         this.firstPosition = new Rectangle(250,350,Color.YELLOW);
         this.secondPosition = new Rectangle(200,200,Color.GRAY);
         this.thirdPosition = new Rectangle(200,150,Color.BROWN);
+
+        // CONTAINER
+        this.firstPlayerContainer = new StackPane();
+        this.firstPlayerContainer.setPrefSize(150,150);
+        this.firstPlayerContainer.setOpacity(0.0);
+
+        this.secondPlayerContainer = new StackPane();
+        this.secondPlayerContainer.setPrefSize(150,150);
+        this.secondPlayerContainer.setOpacity(0.0);
+
+        this.thirdPlayerContainer = new StackPane();
+        this.thirdPlayerContainer.setPrefSize(150,150);
+        this.thirdPlayerContainer.setOpacity(0.0);
+
+        // PLAYERS
+        this.firstPlayer = new Circle(45,Color.BLACK);
+        this.firstPlayerTagname = new Label();
+        this.firstPlayerTagname.setTextAlignment(TextAlignment.CENTER);
+        this.firstPlayerTagname.setFont(tagNameFont);
+
+        this.secondPlayer = new Circle(40,Color.BLACK);
+        this.secondPlayerTagname = new Label();
+        this.secondPlayerTagname.setTextAlignment(TextAlignment.CENTER);
+        this.secondPlayerTagname.setFont(tagNameFont);
+
+        this.thirdPlayer = new Circle(35,Color.rgb(15,230,56));
+        this.thirdPlayerTagname = new Label("C. Pomares\nAuthor");
+        this.thirdPlayerTagname.setTextAlignment(TextAlignment.CENTER);
+        this.thirdPlayerTagname.setFont(tagNameFont);
+
+        // PARTICLES
+        this.canvas = new Canvas(this.getWidth(),this.getHeight());
+        this.confettiEffect = new ConfettiEmitter(2,6,6,-1,2);
+        this.particleSystem = new ParticleSystem(confettiEffect,canvas,BlendMode.EXCLUSION,this.canvas.getWidth() / 2, -100);
+
+        setWinner();
 
     }
 
     @Override
     public void loadComponents() {
-        this.getRoot().getChildren().add(this.winner);
 
+        // COMPONENTS
+        this.getRoot().getChildren().add(backArrow);
+
+        // PODIUM
         this.getRoot().getChildren().addAll(
                 this.firstPosition,
                 this.secondPosition,
                 this.thirdPosition
         );
+
+        // CONTAINERS
+        this.getRoot().getChildren().addAll(
+                this.firstPlayerContainer
+                ,this.secondPlayerContainer
+                ,this.thirdPlayerContainer
+        );
+
+        // PLAYERS
+        this.firstPlayerContainer.getChildren().addAll(
+                this.firstPlayer
+                ,this.firstPlayerTagname
+        );
+
+        this.secondPlayerContainer.getChildren().addAll(
+                this.secondPlayer
+                ,this.secondPlayerTagname
+        );
+
+        this.thirdPlayerContainer.getChildren().addAll(
+                this.thirdPlayer
+                ,this.thirdPlayerTagname
+        );
+
+        // PARTICLES
+        this.getRoot().getChildren().add(this.canvas);
+
+        // ANIMATIONS
+        this.translateFirstPosition.setNode(this.firstPosition);
+        this.translateSecondPosition.setNode(this.secondPosition);
+        this.translateThirdPosition.setNode(this.thirdPosition);
+
+        this.fadeFirstPlayer.setNode(this.firstPlayerContainer);
+        this.fadeSecondPlayer.setNode(this.secondPlayerContainer);
+        this.fadeThirdPlayer.setNode(this.thirdPlayerContainer);
+
+        arrowFade.setNode(this.backArrow);
+        arrowScale.setNode(this.backArrow);
+
     }
 
     @Override
     public void relocateComponents() {
-        this.winner.relocate(100,100);
+
+        this.backArrow.relocate(
+                50,
+                55
+        );
 
         // PODIUM
         this.firstPosition.relocate(
                 ((double) this.getWidth() / 2) - this.firstPosition.getWidth() / 2
-                ,this.getHeight() - this.firstPosition.getHeight()
+                ,this.getHeight()
         );
 
         this.secondPosition.relocate(
                 ((double) this.getWidth() / 2) - this.secondPosition.getWidth() / 2 + 200
-                ,this.getHeight() - this.secondPosition.getHeight()
+                ,this.getHeight()
         );
 
         this.thirdPosition.relocate(
                 ((double) this.getWidth() / 2) - this.thirdPosition.getWidth() / 2 - 200
-                ,this.getHeight() - this.thirdPosition.getHeight()
+                ,this.getHeight()
         );
 
+        // CONTAINERS
+        this.firstPlayerContainer.relocate(
+                ((double) this.getWidth() / 2) - (this.firstPosition.getWidth() / 2) + (this.firstPosition.getWidth() / 2) - 75
+                ,this.getHeight() - this.firstPosition.getHeight() - 160
+        );
+
+        this.secondPlayerContainer.relocate(
+                (((double) this.getWidth() / 2) - (this.secondPosition.getWidth() / 2) + 200) + (this.secondPosition.getWidth() / 2) - 75
+                ,this.getHeight() - this.secondPosition.getHeight() - 160
+        );
+
+        this.thirdPlayerContainer.relocate(
+                (((double) this.getWidth() / 2) - (this.thirdPosition.getWidth() / 2) - 200) + (this.thirdPosition.getWidth() / 2) - 75
+                ,this.getHeight() - this.thirdPosition.getHeight() - 160
+        );
+
+        // PLAYERS
+        StackPane.setAlignment(this.firstPlayer,Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(this.firstPlayerTagname,Pos.TOP_CENTER);
+
+        StackPane.setAlignment(this.secondPlayer,Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(this.secondPlayerTagname,Pos.TOP_CENTER);
+
+        StackPane.setAlignment(this.thirdPlayer,Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(this.thirdPlayerTagname,Pos.TOP_CENTER);
+
+    }
+
+    @Override
+    public void run() {
+        super.run();
+        loadAnimations();
     }
 
     public void setPlayers(GameScene.Player[] players){
@@ -1151,10 +1403,108 @@ class OverScene extends PongScene {
 
     private void setWinner(){
         if(players[0].getPoints() > players[1].getPoints()){
-            this.winner.setText(String.format("Winner is: %s","Player 0"));
+            setOrder(this.players[0],true);
+            setOrder(this.players[1],false);
         } else {
-            this.winner.setText(String.format("Winner is: %s","Player 1"));
+            setOrder(this.players[1],true);
+            setOrder(this.players[0],false);
         }
+    }
+
+    private void loadAnimations(){
+
+        particleIterator = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                confettiEffect.xPoint = (Math.random() * 2 > 1) ? 1 : -1;
+            }
+        }));
+        particleIterator.setCycleCount(Animation.INDEFINITE);
+
+
+        translateFirstPosition.play();
+        translateFirstPosition.setOnFinished(e -> translateSecondPosition.play());
+        translateFirstPosition.setOnFinished(e -> {
+            translateSecondPosition.play();
+        });
+        translateSecondPosition.setOnFinished(e -> {
+            translateThirdPosition.play();
+        });
+        translateThirdPosition.setOnFinished(e -> {
+            translateThirdPosition.stop();
+            this.particleSystem.run();
+            particleIterator.play();
+            fadeFirstPlayer.play();
+        });
+
+        fadeFirstPlayer.setOnFinished(e -> {
+            fadeFirstPlayer.stop();
+            fadeSecondPlayer.play();
+        });
+        fadeSecondPlayer.setOnFinished(e -> {
+            fadeSecondPlayer.stop();
+            fadeThirdPlayer.play();
+        });
+        fadeThirdPlayer.setOnFinished(e -> {
+            fadeThirdPlayer.stop();
+            this.particleSystem.timer.stop();
+            particleIterator.stop();
+            this.getRoot().getChildren().remove(this.canvas);
+            arrowFade.play();
+        });
+
+        this.backArrow.setOnMouseEntered(e -> arrowScale.play());
+        this.backArrow.setOnMouseExited(e -> {
+            arrowScale.jumpTo(Duration.ZERO);
+            arrowScale.stop();
+        });
+
+        this.backArrow.setOnMouseClicked(e -> goBackToTitle());
+
+    }
+
+    private void setOrder(GameScene.Player player, boolean winner){
+        if(winner){
+            setPlayerProperties(player,"1st Position",this.firstPlayerTagname,this.firstPlayer);
+        } else {
+            setPlayerProperties(player,"2nd Position",this.secondPlayerTagname,this.secondPlayer);
+        }
+    }
+
+    private void setPlayerProperties(GameScene.Player player,String position,Label tagName,Circle playerBall){
+        tagName.setText(String.format("%s\n%s",player.getName(),position));
+        if(player.getSprite().getFill() == Color.WHITE){
+            playerBall.setFill(Color.GREEN);
+        } else {
+            playerBall.setFill(player.getSprite().getFill());
+        }
+    }
+
+    private void goBackToTitle(){
+
+        Timeline timeline = new Timeline();
+        KeyValue kv = new KeyValue(this.getRoot().translateXProperty(),this.getWidth(),Interpolator.EASE_IN);
+        KeyFrame kf = new KeyFrame(Duration.millis(1000),kv);
+        timeline.getKeyFrames().add(kf);
+        timeline.play();
+
+        timeline.setOnFinished(e -> {
+            this.getRoot().translateXProperty().set(0);
+            this.manager.changeScene(this.parent.entryScene);
+        });
+
+    }
+
+    private Region generateArrow(int minWidth, int minHeight, String fxColor){
+        Region arrow = new Region();
+        SVGPath svg = new SVGPath();
+        svg.setContent(
+                "M420.361,192.229c-1.83-0.297-3.682-0.434-5.535-0.41H99.305l6.88-3.2c6.725-3.183,12.843-7.515,18.08-12.8l88.48-88.48,c11.653-11.124,13.611-29.019,4.64-42.4c-10.441-14.259-30.464-17.355-44.724-6.914c-1.152,0.844-2.247,1.764-3.276,2.754,l-160,160C-3.119,213.269-3.13,233.53,9.36,246.034c0.008,0.008,0.017,0.017,0.025,0.025l160,160,c12.514,12.479,32.775,12.451,45.255-0.063c0.982-0.985,1.899-2.033,2.745-3.137c8.971-13.381,7.013-31.276-4.64-42.4,l-88.32-88.64c-4.695-4.7-10.093-8.641-16-11.68l-9.6-4.32h314.24c16.347,0.607,30.689-10.812,33.76-26.88,C449.654,211.494,437.806,195.059,420.361,192.229z"
+        );
+        arrow.setShape(svg);
+        arrow.setMinSize(minWidth,minHeight);
+        arrow.setStyle(String.format("-fx-background-color: %s",fxColor));
+        return arrow;
     }
 
 }
@@ -1185,7 +1535,7 @@ class TestScene extends PongScene {
         Circle circle = new Circle(15,Color.WHITE);
         this.getRoot().setStyle("-fx-background-color: #fff");
         Canvas canvas = new Canvas(300,300);
-        ConfettiEmitter confettiEmitter = new ConfettiEmitter(2,5,5,2,5);
+        //ConfettiEmitter confettiEmitter = new ConfettiEmitter(2,5,5,2,5);
 
         this.getRoot().getChildren().add(canvas);
 
@@ -1209,17 +1559,23 @@ class TestScene extends PongScene {
         // BOT-R
         // x: 0.5 y: 0.5
 
-        ParticleSystem particleSystem = new ParticleSystem(confettiEmitter,canvas,BlendMode.EXCLUSION);
-        particleSystem.run();
+        //ParticleSystem particleSystem = new ParticleSystem(confettiEmitter,canvas,BlendMode.EXCLUSION);
+        //particleSystem.run();
+
+        canvas.getGraphicsContext2D().setFill(Color.BLACK);
+
+        Canvas cv = new Canvas(this.getWidth(),this.getHeight());
+        cv.toFront();
+        ConfettiEmitter confettiEffect = new ConfettiEmitter(2,6,6,-1,2);
+        ParticleSystem particleSystem2 = new ParticleSystem(confettiEffect,cv,BlendMode.EXCLUSION,cv.getWidth() / 2, -100);
+
+        this.getRoot().getChildren().add(cv);
+        particleSystem2.run();
 
         Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
-
             @Override
             public void handle(ActionEvent event) {
-
-                //circle.relocate(circle.getLayoutX() + deltaX, 100);
-                //canvas.relocate(circle.getLayoutX() - 50, circle.getLayoutY() - 50);
-
+                confettiEffect.xPoint = (Math.random() * 2 > 1) ? 1 : -1;
             }
         }));
         loop.setCycleCount(Animation.INDEFINITE);
@@ -1287,6 +1643,8 @@ class ParticleSystem {
     final private Canvas CANVAS;
     final private List<Particle> PARTICLES = new ArrayList<>();
 
+    private boolean custom = false;
+    private double particlesX, particlesY;
     private GraphicsContext g;
     public AnimationTimer timer;
 
@@ -1302,6 +1660,15 @@ class ParticleSystem {
         this.CANVAS.setBlendMode(blendMode);
     }
 
+    public ParticleSystem(Emitter emitter, Canvas canvas,BlendMode blendMode,double particleX, double particleY){
+        this.EMITTER = emitter;
+        this.CANVAS = canvas;
+        this.CANVAS.setBlendMode(blendMode);
+        this.particlesX = particleX;
+        this.particlesY = particleY;
+        this.custom = true;
+    }
+
     private void onUpdate(){
 
         g.setGlobalAlpha(1.0);
@@ -1310,10 +1677,17 @@ class ParticleSystem {
         g.fillRect(0,0,this.CANVAS.getWidth(),this.CANVAS.getHeight());
 
         // PARTICLES CONST
-        this.PARTICLES.addAll(this.EMITTER.emit(
-                this.CANVAS.getWidth() / 2,
-                this.CANVAS.getHeight() / 2
-        ));
+        if(this.custom){
+            this.PARTICLES.addAll(this.EMITTER.emit(
+                    this.particlesX,
+                    this.particlesY
+            ));
+        } else {
+            this.PARTICLES.addAll(this.EMITTER.emit(
+                    this.CANVAS.getWidth() / 2,
+                    this.CANVAS.getHeight() / 2
+            ));
+        }
 
         for(Iterator<Particle> it = this.PARTICLES.iterator(); it.hasNext();){
             Particle p = it.next();
@@ -1415,8 +1789,8 @@ class ConfettiEmitter extends Emitter {
     final private int NUM_PARTICLES;
     final private int LIFETIME;
     final private int RADIUS;
-    final private double xPoint;
-    final private double yPoint;
+    public double xPoint;
+    public double yPoint;
 
     public ConfettiEmitter(int numParticles, int lifetime, int radius, double x, double y) {
         this.NUM_PARTICLES = numParticles;
