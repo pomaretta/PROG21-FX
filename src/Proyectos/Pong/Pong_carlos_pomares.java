@@ -18,6 +18,7 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -480,19 +481,30 @@ class OptionsScene extends PongScene {
     private Region backArrow;
 
     private Font optionsTitleFont = Font.font("Arial",FontWeight.BOLD,18);
+    private Font radioFont = Font.font("Arial",FontWeight.BOLD,14);
+    private Font optionsFont = Font.font("Arial",FontWeight.BOLD,12);
     private Label gameOptionsTitle;
     private StackPane gameOptions;
     private Label playerOptionsTitle;
     private StackPane playerOptions;
 
+    private Pane playerContainer;
+    private RadioButton player0;
+    private RadioButton player1;
+    private ToggleGroup playerGroup;
+    private Label playerNameLabel;
     private TextField playerName;
+    private Label playerColorLabel;
     private TextField playerColor;
 
     // GAME OPTIONS
+    private Pane velocityContainer;
     private RadioButton defaultVelocity;
     private RadioButton maxVelocity;
     private ToggleGroup velocityGroup;
+    private Label velocityLabel;
     private Slider velocitySlider;
+    private TextField maxVelocityField;
 
     public OptionsScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
@@ -510,18 +522,75 @@ class OptionsScene extends PongScene {
         // Arrow
         this.backArrow = generateArrow(50,40,"black");
 
-        // Options
+        // PLAYER OPTIONS
         this.playerOptionsTitle = new Label("Player Options");
         this.playerOptionsTitle.setFont(this.optionsTitleFont);
         this.playerOptions = new StackPane();
         this.playerOptions.setPrefSize(300,350);
-        this.playerOptions.setStyle("-fx-background-color: blue");
 
+        this.playerContainer = new Pane();
+        this.playerContainer.setMaxSize(250,250);
+
+        this.playerGroup = new ToggleGroup();
+
+        this.player0 = new RadioButton();
+        this.player0.setText("Player 0");
+        this.player0.setFont(this.radioFont);
+        this.player0.setSelected(true);
+        this.player0.setToggleGroup(this.playerGroup);
+
+        this.player1 = new RadioButton();
+        this.player1.setText("Player 1");
+        this.player1.setFont(this.radioFont);
+        this.player1.setToggleGroup(this.playerGroup);
+
+        this.playerName = new TextField();
+        this.playerColor = new TextField();
+
+        this.playerNameLabel = new Label("Player name:");
+        this.playerNameLabel.setFont(this.optionsFont);
+        this.playerNameLabel.setLabelFor(this.playerName);
+
+        this.playerColorLabel = new Label("Player color:");
+        this.playerColorLabel.setFont(this.optionsFont);
+        this.playerColorLabel.setLabelFor(this.playerColor);
+
+        // VELOCITY OPTIONS
         this.gameOptionsTitle = new Label("Game Options");
         this.gameOptionsTitle.setFont(this.optionsTitleFont);
         this.gameOptions = new StackPane();
         this.gameOptions.setPrefSize(300,350);
-        this.gameOptions.setStyle("-fx-background-color: blue");
+
+        this.velocityContainer = new Pane();
+        this.velocityContainer.setMinSize(250,250);
+
+        this.velocityGroup = new ToggleGroup();
+
+        this.defaultVelocity = new RadioButton();
+        this.defaultVelocity.setText("Default Velocity");
+        this.defaultVelocity.setFont(this.radioFont);
+        this.defaultVelocity.setSelected(true);
+        this.defaultVelocity.setToggleGroup(this.velocityGroup);
+
+        this.maxVelocity = new RadioButton();
+        this.maxVelocity.setText("Maximum Velocity");
+        this.maxVelocity.setFont(this.radioFont);
+        this.maxVelocity.setToggleGroup(this.velocityGroup);
+
+        this.velocityLabel = new Label("2");
+        this.velocityLabel.setLabelFor(this.velocitySlider);
+
+        this.maxVelocityField = new TextField();
+        this.maxVelocityField.setText("5");
+        this.maxVelocityField.setMinSize(200,20);
+
+        this.velocitySlider = new Slider(1,4,1);
+        this.velocitySlider.setShowTickLabels(true);
+        this.velocitySlider.setBlockIncrement(1.0);
+        this.velocitySlider.setMinorTickCount(0);
+        this.velocitySlider.setMajorTickUnit(1);
+        this.velocitySlider.setSnapToTicks(true);
+        this.velocitySlider.setMinSize(200,10);
 
     }
 
@@ -538,6 +607,32 @@ class OptionsScene extends PongScene {
                 this.playerOptions,
                 this.gameOptions
         );
+
+        this.playerOptions.getChildren().addAll(
+                this.player0,
+                this.player1,
+                this.playerContainer
+        );
+
+        this.playerContainer.getChildren().addAll(
+                this.playerNameLabel,
+                this.playerColorLabel,
+                this.playerName,
+                this.playerColor
+        );
+
+        this.gameOptions.getChildren().addAll(
+                this.defaultVelocity,
+                this.maxVelocity,
+                this.velocityContainer
+        );
+
+        this.velocityContainer.getChildren().addAll(
+                this.maxVelocityField
+                ,this.velocityLabel
+                ,this.velocitySlider
+        );
+
     }
 
     @Override
@@ -563,6 +658,16 @@ class OptionsScene extends PongScene {
                 , 200
         );
 
+        StackPane.setAlignment(this.player0,Pos.TOP_LEFT);
+        StackPane.setAlignment(this.player1,Pos.TOP_RIGHT);
+        StackPane.setAlignment(this.playerContainer,Pos.CENTER);
+
+        this.playerNameLabel.relocate(80,20);
+        this.playerName.relocate(40,50);
+
+        this.playerColorLabel.relocate(80,90);
+        this.playerColor.relocate(40,120);
+
         this.gameOptionsTitle.relocate(
                 this.getWidth() - this.gameOptions.getPrefWidth() + 45,
                 150
@@ -573,14 +678,27 @@ class OptionsScene extends PongScene {
                 ,200
         );
 
+        StackPane.setAlignment(this.defaultVelocity,Pos.TOP_LEFT);
+        this.defaultVelocity.toFront();
+        StackPane.setAlignment(this.maxVelocity,Pos.TOP_RIGHT);
+        this.maxVelocity.toFront();
+        StackPane.setAlignment(this.velocityContainer,Pos.CENTER);
+
+        this.maxVelocityField.relocate(50,50);
+        this.velocityLabel.relocate(150,50);
+        this.velocitySlider.relocate(50,90);
+
     }
 
     @Override
     public void run() {
         super.run();
+
         arrowFunction();
 
-
+        this.velocitySlider.valueProperty().addListener(((observableValue, number, t1) -> {
+            this.velocityLabel.setText(t1.toString());
+        }));
 
     }
 
