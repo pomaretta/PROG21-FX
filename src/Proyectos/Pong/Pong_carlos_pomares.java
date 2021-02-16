@@ -15,10 +15,11 @@ package Proyectos.Pong;
 
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -66,12 +67,11 @@ public class Pong_carlos_pomares extends Application {
     public OptionsScene optionsScene;
     public GameScene gameScene;
     public OverScene overScene;
-    public TestScene testScene;
 
     // ENTRY PROPERTIES
 
     // GAME PROPERTIES
-    private final int WINNER_ROUNDS = 2;
+    private final int WINNER_ROUNDS = 15;
 
     // OVER PROPERTIES
 
@@ -93,7 +93,6 @@ public class Pong_carlos_pomares extends Application {
         this.optionsScene = new OptionsScene(this.WIDTH,this.HEIGHT,this);
         this.gameScene = new GameScene(this.WIDTH,this.HEIGHT,this);
         this.overScene = new OverScene(this.WIDTH,this.HEIGHT,this);
-        this.testScene = new TestScene(this.WIDTH,this.HEIGHT,this);
 
         // SCENE PROPERTIES IF EXISTS
         this.gameScene.setMaxPoints(this.WINNER_ROUNDS);
@@ -103,12 +102,9 @@ public class Pong_carlos_pomares extends Application {
         this.manager.registerScene(optionsScene);
         this.manager.registerScene(gameScene);
         this.manager.registerScene(overScene);
-        this.manager.registerScene(testScene);
 
         // LOAD FIRST SCENE
-        //this.manager.changeScene(entryScene);
-        this.manager.changeScene(optionsScene);
-        //this.manager.changeScene(testScene);
+        this.manager.changeScene(entryScene);
 
         // STAGE
         this.stage.setScene(this.manager.getScene());
@@ -488,6 +484,7 @@ class OptionsScene extends PongScene {
     private Label playerOptionsTitle;
     private StackPane playerOptions;
 
+    // PLAYER OPTIONS
     private Pane playerContainer;
     private RadioButton player0;
     private RadioButton player1;
@@ -495,7 +492,8 @@ class OptionsScene extends PongScene {
     private Label playerNameLabel;
     private TextField playerName;
     private Label playerColorLabel;
-    private TextField playerColor;
+    private ColorPicker playerColor;
+    private Button playerSubmit;
 
     // GAME OPTIONS
     private Pane velocityContainer;
@@ -505,6 +503,15 @@ class OptionsScene extends PongScene {
     private Label velocityLabel;
     private Slider velocitySlider;
     private TextField maxVelocityField;
+    private Button velocitySubmit;
+
+    private Label maxPointsLabel;
+    private TextField maxPointsField;
+
+    private boolean playerSelection = true;
+    private boolean velocitySelection = true;
+
+    private ColorPicker colorPicker;
 
     public OptionsScene(int width, int height, Pong_carlos_pomares parent) {
         super(width, height, parent);
@@ -535,17 +542,19 @@ class OptionsScene extends PongScene {
 
         this.player0 = new RadioButton();
         this.player0.setText("Player 0");
+        this.player0.setUserData("player0");
         this.player0.setFont(this.radioFont);
         this.player0.setSelected(true);
         this.player0.setToggleGroup(this.playerGroup);
 
         this.player1 = new RadioButton();
         this.player1.setText("Player 1");
+        this.player1.setUserData("player1");
         this.player1.setFont(this.radioFont);
         this.player1.setToggleGroup(this.playerGroup);
 
         this.playerName = new TextField();
-        this.playerColor = new TextField();
+        this.playerColor = new ColorPicker();
 
         this.playerNameLabel = new Label("Player name:");
         this.playerNameLabel.setFont(this.optionsFont);
@@ -554,6 +563,10 @@ class OptionsScene extends PongScene {
         this.playerColorLabel = new Label("Player color:");
         this.playerColorLabel.setFont(this.optionsFont);
         this.playerColorLabel.setLabelFor(this.playerColor);
+
+        this.playerSubmit = new Button("Set changes");
+        this.playerSubmit.setFont(this.radioFont);
+        this.playerSubmit.setMinSize(60,30);
 
         // VELOCITY OPTIONS
         this.gameOptionsTitle = new Label("Game Options");
@@ -568,12 +581,14 @@ class OptionsScene extends PongScene {
 
         this.defaultVelocity = new RadioButton();
         this.defaultVelocity.setText("Default Velocity");
+        this.defaultVelocity.setUserData("default");
         this.defaultVelocity.setFont(this.radioFont);
         this.defaultVelocity.setSelected(true);
         this.defaultVelocity.setToggleGroup(this.velocityGroup);
 
         this.maxVelocity = new RadioButton();
         this.maxVelocity.setText("Maximum Velocity");
+        this.maxVelocity.setUserData("maximum");
         this.maxVelocity.setFont(this.radioFont);
         this.maxVelocity.setToggleGroup(this.velocityGroup);
 
@@ -592,10 +607,21 @@ class OptionsScene extends PongScene {
         this.velocitySlider.setSnapToTicks(true);
         this.velocitySlider.setMinSize(200,10);
 
+        this.maxPointsLabel = new Label("Maximum Points:");
+        this.maxPointsLabel.setFont(this.radioFont);
+
+        this.maxPointsField = new TextField();
+        this.maxPointsField.setMinSize(200,20);
+
+        this.velocitySubmit = new Button("Set changes.");
+        this.velocitySubmit.setFont(this.radioFont);
+        this.velocitySubmit.setMinSize(60,30);
+
     }
 
     @Override
     public void loadComponents() {
+
         this.getRoot().getChildren().addAll(
                 this.sceneTitle
                 ,this.backArrow
@@ -615,10 +641,11 @@ class OptionsScene extends PongScene {
         );
 
         this.playerContainer.getChildren().addAll(
-                this.playerNameLabel,
-                this.playerColorLabel,
-                this.playerName,
-                this.playerColor
+                this.playerNameLabel
+                ,this.playerColorLabel
+                ,this.playerName
+                ,this.playerColor
+                ,this.playerSubmit
         );
 
         this.gameOptions.getChildren().addAll(
@@ -631,6 +658,9 @@ class OptionsScene extends PongScene {
                 this.maxVelocityField
                 ,this.velocityLabel
                 ,this.velocitySlider
+                ,this.maxPointsLabel
+                ,this.maxPointsField
+                ,this.velocitySubmit
         );
 
     }
@@ -666,7 +696,9 @@ class OptionsScene extends PongScene {
         this.playerName.relocate(40,50);
 
         this.playerColorLabel.relocate(80,90);
-        this.playerColor.relocate(40,120);
+        this.playerColor.relocate(50,120);
+
+        this.playerSubmit.relocate(65,170);
 
         this.gameOptionsTitle.relocate(
                 this.getWidth() - this.gameOptions.getPrefWidth() + 45,
@@ -688,6 +720,11 @@ class OptionsScene extends PongScene {
         this.velocityLabel.relocate(150,50);
         this.velocitySlider.relocate(50,90);
 
+        this.maxPointsLabel.relocate(100,150);
+        this.maxPointsField.relocate(50,175);
+
+        this.velocitySubmit.relocate(100,220);
+
     }
 
     @Override
@@ -700,6 +737,112 @@ class OptionsScene extends PongScene {
             this.velocityLabel.setText(t1.toString());
         }));
 
+        this.playerGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observableValue, Toggle toggle, Toggle t1) {
+                if(t1.getUserData().equals("player0")){
+                    playerSelection = true;
+                } else {
+                    playerSelection = false;
+                }
+                updateSelection();
+            }
+        });
+
+        this.velocityGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observableValue, Toggle toggle, Toggle t1) {
+                if(t1.getUserData().equals("default")){
+                    velocitySelection = true;
+                } else {
+                    velocitySelection = false;
+                }
+                updateSelection();
+            }
+        });
+
+        this.playerSubmit.setOnAction(e -> setPlayerOptions());
+        this.velocitySubmit.setOnAction(e -> setGameOptions());
+
+        updateSelection();
+
+    }
+
+    private void updateSelection(){
+
+        if(this.playerSelection){
+            this.playerName.setText(retrievePlayers()[0].getName());
+            this.playerColor.setValue((Color) retrievePlayers()[0].getSprite().getFill());
+        } else {
+            this.playerName.setText(retrievePlayers()[1].getName());
+            this.playerColor.setValue((Color) retrievePlayers()[1].getSprite().getFill());
+        }
+
+        if(this.velocitySelection){
+            this.velocitySlider.setVisible(true);
+            this.velocityLabel.setVisible(true);
+            this.velocitySlider.setValue(retrieveBall().getVelocity());
+            this.maxVelocityField.setVisible(false);
+        } else {
+            this.velocitySlider.setVisible(false);
+            this.velocityLabel.setVisible(false);
+            this.maxVelocityField.setVisible(true);
+            this.maxVelocityField.setText(String.valueOf(retrieveBall().getMaxVelocity()));
+        }
+
+        this.maxPointsField.setText(String.valueOf(this.parent.gameScene.getMaxPoints()));
+
+    }
+
+    private void setPlayerOptions(){
+        if(this.playerSelection){
+            this.retrievePlayers()[0].setName(this.playerName.getText());
+            this.retrievePlayers()[0].setColor(this.playerColor.getValue());
+        } else {
+            this.retrievePlayers()[1].setName(this.playerName.getText());
+            this.retrievePlayers()[1].setColor(this.playerColor.getValue());
+        }
+    }
+
+    private void setGameOptions(){
+        if(this.velocitySelection){
+            this.retrieveBall().setDefaultVelocity(this.velocitySlider.getValue());
+        } else {
+            double filterNumber = this.retrieveBall().getMaxVelocity();
+            try {
+                filterNumber = Double.parseDouble(this.maxVelocityField.getText());
+            } catch (NumberFormatException e){
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Input error.");
+                alert.setHeaderText("Look your maximum velocity field.");
+                alert.setContentText(e.getMessage());
+                alert.showAndWait();
+            }
+            this.retrieveBall().setMaxVelocity(filterNumber);
+        }
+
+        int filteredNumber = this.parent.gameScene.getMaxPoints();
+
+        try {
+            filteredNumber = Integer.parseInt(this.maxPointsField.getText());
+        } catch (NumberFormatException e){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Input error.");
+            alert.setHeaderText("Look your maximum points field.");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+
+        this.parent.gameScene.setMaxPoints(filteredNumber);
+
+    }
+
+    private GameScene.Player[] retrievePlayers(){
+        return this.parent.gameScene.players;
+    }
+
+    private GameScene.Ball retrieveBall(){
+        return this.parent.gameScene.ball;
     }
 
     private void arrowFunction(){
@@ -791,6 +934,14 @@ class GameScene extends PongScene {
             return this.name;
         }
 
+        public void setName(String name){
+            this.name = name;
+        }
+
+        public void setColor(Color color){
+            this.sprite.setFill(color);
+        }
+
         public void addPoint(){
             this.points++;
         }
@@ -851,6 +1002,7 @@ class GameScene extends PongScene {
     }
     class Ball {
 
+        private double DEFAULT_VELOCITY = 1;
         private int consecutiveCollision = 0;
         private double maxVelocity = 5;
         private double deltaX, deltaY, velocity;
@@ -863,12 +1015,12 @@ class GameScene extends PongScene {
             generateAngle();
         }
 
-        public void setMaxVelocity(int maxVelocity){
+        public void setMaxVelocity(double maxVelocity){
             this.maxVelocity = maxVelocity;
         }
 
-        public void setDefaultVelocity(int defaultVelocity){
-            this.velocity = defaultVelocity;
+        public void setDefaultVelocity(double defaultVelocity){
+            this.DEFAULT_VELOCITY = defaultVelocity;
         }
 
         public void modifyY(){
@@ -923,9 +1075,18 @@ class GameScene extends PongScene {
                             ? 135 + ((int) (Math.random() * 15) + 1)
                             : -135 - ((int) (Math.random() * 15) + 1)
             );
-            this.velocity = 1;
+            this.velocity = this.DEFAULT_VELOCITY;
             this.deltaX = this.velocity * Math.cos(angle);
             this.deltaY = this.velocity * Math.sin(angle);
+        }
+
+        public void randomRelocate(double height, double gap){
+            double randomY = Math.random() * height;
+            if(height < gap){
+                this.sprite.relocate(this.sprite.getLayoutX(),randomY + gap);
+            } else {
+                this.sprite.relocate(this.sprite.getLayoutX(),randomY - gap);
+            }
         }
 
         public void resetProperties(){
@@ -951,7 +1112,11 @@ class GameScene extends PongScene {
         }
 
         public double getVelocity() {
-            return velocity;
+            return DEFAULT_VELOCITY;
+        }
+
+        public double getMaxVelocity(){
+            return this.maxVelocity;
         }
 
         public Circle getSprite() {
@@ -978,7 +1143,7 @@ class GameScene extends PongScene {
 
     // OBJECTS
     public Player[] players;
-    private Ball ball;
+    public Ball ball;
     private Timeline loop;
 
     // ADDITIONS
@@ -1008,7 +1173,7 @@ class GameScene extends PongScene {
         this.getRoot().setMaxWidth(this.getWidth());
 
         this.fireEffectCanvas = new Canvas(100,100);
-        this.fireEffect = new FireEmitter(Color.rgb(220,40,65),15,1,0.5,0.5);
+        this.fireEffect = new FireEmitter(Color.rgb(15,167,178),15,1,0.5,0.5);
         this.particleSystem = new ParticleSystem(fireEffect,fireEffectCanvas);
 
         this.ball = new Ball(this.BALL_RADIUS,Color.WHITE);
@@ -1035,6 +1200,8 @@ class GameScene extends PongScene {
                 this.getWidth() - 100,
                 (((double) this.getHeight() / 2) - this.players[0].getSprite().getHeight())
         };
+
+        this.lastWinnerPlayer = !(Math.random() * 1 > 0.5);
 
     }
 
@@ -1095,6 +1262,7 @@ class GameScene extends PongScene {
         this.players[0].getSprite().relocate(this.P1_POS[0],this.P1_POS[1]);
         this.players[1].getSprite().relocate(this.P2_POS[0],this.P2_POS[1]);
         this.ball.relocateInMiddle(this.getRoot());
+        this.ball.randomRelocate(this.getHeight(),50);
 
         this.fireEffectCanvas.relocate(this.ball.sprite.getLayoutX() - 50,this.ball.sprite.getLayoutY() - 50);
 
@@ -1154,7 +1322,13 @@ class GameScene extends PongScene {
         this.maxPoints = maxPoints;
     }
 
+    public int getMaxPoints(){
+        return this.maxPoints;
+    }
+
     private void startRound(){
+
+        this.ball.generateAngle();
 
         if(this.players[0].getPoints() == maxPoints || this.players[1].getPoints() == maxPoints) {
             this.playing = false;
@@ -1214,7 +1388,7 @@ class GameScene extends PongScene {
         this.fireEffectCanvas.setLayoutX(this.ball.sprite.getLayoutX() - 50);
         this.fireEffectCanvas.setLayoutY(this.ball.sprite.getLayoutY() - 50);
 
-        if(this.ball.velocity > 1){
+        if(this.ball.velocity > this.ball.DEFAULT_VELOCITY){
             this.fireEffectCanvas.setVisible(true);
             if(this.ball.deltaX > 0){
                 this.fireEffect.xPoint = -0.5;
@@ -1625,81 +1799,6 @@ class OverScene extends PongScene {
         return arrow;
     }
 
-}
-
-class TestScene extends PongScene {
-
-    public TestScene(int width, int height, Pong_carlos_pomares parent) {
-        super(width, height, parent);
-    }
-
-    @Override
-    public void generateComponents() {
-
-    }
-
-    @Override
-    public void loadComponents() {
-    }
-
-    @Override
-    public void relocateComponents() {
-    }
-
-    @Override
-    public void run() {
-        super.run();
-
-        Circle circle = new Circle(15,Color.WHITE);
-        this.getRoot().setStyle("-fx-background-color: #fff");
-        Canvas canvas = new Canvas(300,300);
-        //ConfettiEmitter confettiEmitter = new ConfettiEmitter(2,5,5,2,5);
-
-        this.getRoot().getChildren().add(canvas);
-
-        this.getRoot().getChildren().add(circle);
-        //circle.relocate(100,100);
-        //canvas.relocate(100,100);
-        canvas.relocate((double) this.getWidth() / 2 - 50,0);
-
-        // TOP-L
-        // x: -0.5 y: -0.5
-        // TOP-R
-        // x: 0.5 y: -0.5
-
-        // MID-L
-        // x: -0.5 y: (Math.random() * 2 > 1) ? 0.15 : -0.15
-        // MID-R
-        // x: 0.5 y: (Math.random() * 2 > 1) ? 0.15 : -0.15
-
-        // BOT-L
-        // x: -0.5 y: 0.5
-        // BOT-R
-        // x: 0.5 y: 0.5
-
-        //ParticleSystem particleSystem = new ParticleSystem(confettiEmitter,canvas,BlendMode.EXCLUSION);
-        //particleSystem.run();
-
-        canvas.getGraphicsContext2D().setFill(Color.BLACK);
-
-        Canvas cv = new Canvas(this.getWidth(),this.getHeight());
-        cv.toFront();
-        ConfettiEmitter confettiEffect = new ConfettiEmitter(2,6,6,-1,2);
-        ParticleSystem particleSystem2 = new ParticleSystem(confettiEffect,cv,BlendMode.EXCLUSION,cv.getWidth() / 2, -100);
-
-        this.getRoot().getChildren().add(cv);
-        particleSystem2.run();
-
-        Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                confettiEffect.xPoint = (Math.random() * 2 > 1) ? 1 : -1;
-            }
-        }));
-        loop.setCycleCount(Animation.INDEFINITE);
-        loop.play();
-
-    }
 }
 
 /*
