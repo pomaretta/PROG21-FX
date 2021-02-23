@@ -1,9 +1,9 @@
-package Proyectos.PongSimple;
+package simple.PongSimple;
 
 /*
 
     Project     PROG21-FX
-    Package     Proyectos.Pong    
+    Package     simple.Pong    
     
     Version     1.0      
     Author      Carlos Pomares
@@ -65,7 +65,7 @@ public class Pong_carlos_pomares extends Application {
         // ASSIGN WIDTH AND HEIGHT
         this.ANCHO = 800;
         this.ALTO = 600;
-        this.RONDAS_PARA_GANAR = 2;
+        this.RONDAS_PARA_GANAR = 15;
 
         // INSTANCE AVAILABLE SCENES
         this.gameScene = new GameScene(this.ANCHO,this.ALTO,this);

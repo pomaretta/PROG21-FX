@@ -1,9 +1,9 @@
-package Proyectos.Pong;
+package simple.Pong;
 
 /*
 
     Project     PROG21-FX
-    Package     Proyectos.Pong    
+    Package     simple.Pong
     
     Version     1.0      
     Author      Carlos Pomares
@@ -46,7 +46,7 @@ import java.util.*;
  * @author Carlos Pomares
  */
 
-public class Pong_carlos_pomares extends Application {
+public class Pong_carlos_pomares_completo extends Application {
 
     // WINDOW PROPERTIES
     private int HEIGHT;
@@ -143,11 +143,11 @@ public class Pong_carlos_pomares extends Application {
 class SceneManager {
 
     private final Scene scene;
-    private final Pong_carlos_pomares toManage;
+    private final Pong_carlos_pomares_completo toManage;
     private PongScene currentScene;
     private final ArrayList<PongScene> scenes;
 
-    public SceneManager(Pong_carlos_pomares bind){
+    public SceneManager(Pong_carlos_pomares_completo bind){
         this.toManage = bind;
         this.scene = new Scene(new Pane(),toManage.getWidth(),toManage.getHeight());
         this.scenes = new ArrayList<>();
@@ -229,9 +229,9 @@ abstract class PongScene implements Component {
     private final int HEIGHT;
     private final Pane ROOT;
     protected SceneManager manager;
-    protected Pong_carlos_pomares parent;
+    protected Pong_carlos_pomares_completo parent;
 
-    public PongScene(int width, int height, Pong_carlos_pomares parent){
+    public PongScene(int width, int height, Pong_carlos_pomares_completo parent){
         this.WIDTH = width;
         this.HEIGHT = height;
         this.parent = parent;
@@ -340,7 +340,7 @@ class EntryScene extends PongScene {
     private Circle topCircle;
     private Circle topCircleShadow;
 
-    public EntryScene(int width, int height, Pong_carlos_pomares parent){
+    public EntryScene(int width, int height, Pong_carlos_pomares_completo parent){
         super(width,height, parent);
     }
 
@@ -513,7 +513,7 @@ class OptionsScene extends PongScene {
 
     private ColorPicker colorPicker;
 
-    public OptionsScene(int width, int height, Pong_carlos_pomares parent) {
+    public OptionsScene(int width, int height, Pong_carlos_pomares_completo parent) {
         super(width, height, parent);
     }
 
@@ -1166,7 +1166,7 @@ class GameScene extends PongScene {
     private Label spaceRequirement;
     private Label gameOver;
 
-    public GameScene(int width, int height, Pong_carlos_pomares parent){
+    public GameScene(int width, int height, Pong_carlos_pomares_completo parent){
         super(width, height, parent);
 
         this.getRoot().setMaxHeight(this.getHeight());
@@ -1510,7 +1510,7 @@ class OverScene extends PongScene {
     FadeTransition fadeSecondPlayer;
     FadeTransition fadeThirdPlayer;
 
-    public OverScene(int width, int height, Pong_carlos_pomares parent) {
+    public OverScene(int width, int height, Pong_carlos_pomares_completo parent) {
         super(width, height, parent);
 
         arrowScale = AnimateNode.animateScale(Duration.millis(1000),Animation.INDEFINITE,0.2,0.2,true);

@@ -25,7 +25,7 @@ import javafx.scene.shape.Rectangle;
 
 public class Player {
 
-    private double deltaY = 5,velocity = 2;
+    private double deltaY = 10,velocity = 1.5;
     private Rectangle sprite;
     private int points;
 
